@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>F1 Neon Racer</title>
+<style>
+body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
+#score { position:fixed; top:10px; left:10px; color:#ff0000; font: bold 20px 'Arial', sans-serif;}
+#highScore { position:fixed; top:10px; right:10px; color:#00ff00; font: bold 20px 'Arial', sans-serif;}
+#powerup { position:fixed; bottom:10px; left:10px; color:#ffff00; font: bold 20px 'Arial', sans-serif; opacity: 0;}
+#controls { position:fixed; bottom:10px; left:0; right:0; text-align:center; color:#ffffff; font: bold 16px 'Arial', sans-serif;}
+#tiltToggle { position:fixed; bottom:40px; right:10px; background: rgba(255,255,255,0.2); color:#ffffff; padding:10px; border-radius:5px; font: bold 16px 'Arial', sans-serif; border:none; cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="score">0</div>
+<div id="highScore">High Score: 0</div>
+<div id="powerup">Power-up Active!</div>
+<div id="controls">Tap left/right sides to steer<br>or use tilt controls</div>
+<button id="tiltToggle">Toggle Tilt Controls</button>
+<script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
+<script>
+// Load and store high score
+let highScore = localStorage.getItem('f1RacerHighScore') || 0;
+document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
+
+// Sound effects
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+function createSound(type) {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    switch(type) {
+        case 'powerup':
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            oscillator.frequency.linearRampToValueAtTime(880, audioContext.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
+            break;
+        case 'crash':
+            oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+            oscillator.frequency.linearRampToValueAtTime(110, audioContext.currentTime + 0.3);
+            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+            break;
+        case 'engine':
+            oscillator.frequency.setValueAtTime(100, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+            break;
+    }
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    return { oscillator, gainNode };
+}
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x000000, 10, 50);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// F1 car
+const carBody = new THREE.Group();
+
+// Main body
+const bodyGeometry = new THREE.BoxGeometry(0.8, 0.3, 2);
+const bodyMaterial = new THREE.MeshStandardMaterial({
+    color: 0xff0000,
+    emissive: 0x330000,
+    metalness: 0.8,
+    roughness: 0.2
+});
+const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+carBody.add(body);
+
+// Cockpit
+const cockpitGeometry = new THREE.BoxGeometry(0.4, 0.2, 0.6);
+const cockpit = new THREE.Mesh(cockpitGeometry, new THREE.MeshStandardMaterial({
+    color: 0x111111,
+    metalness: 0.9,
+    roughness: 0.1
+}));
+cockpit.position.y = 0.25;
+cockpit.position.z = -0.2;
+carBody.add(cockpit);
+
+// Wings
+const wingGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.3);
+const wingMaterial = new THREE.MeshStandardMaterial({
+    color: 0x333333,
+    metalness: 0.8,
+    roughness: 0.2
+});
+const frontWing = new THREE.Mesh(wingGeometry, wingMaterial);
+frontWing.position.z = 0.8;
+carBody.add(frontWing);
+
+const rearWing = new THREE.Mesh(wingGeometry, wingMaterial);
+rearWing.position.z = -0.8;
+carBody.add(rearWing);
+
+// Wheels
+const wheelGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16);
+const wheelMaterial = new THREE.MeshStandardMaterial({
+    color: 0x111111,
+    metalness: 0.9,
+    roughness: 0.1
+});
+
+const wheels = [];
+const wheelPositions = [
+    {x: 0.4, z: 0.5},
+    {x: -0.4, z: 0.5},
+    {x: 0.4, z: -0.5},
+    {x: -0.4, z: -0.5}
+];
+
+wheelPositions.forEach(pos => {
+    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(pos.x, -0.1, pos.z);
+    wheels.push(wheel);
+    carBody.add(wheel);
+});
+
+carBody.position.y = 0.3;
+scene.add(carBody);
+
+// Track segments
+const trackSegments = [];
+const segmentLength = 20;
+const numSegments = 12;
+const trackWidth = 20;
+
+function createTrackSegment(position) {
+    const segment = new THREE.Group();
+    
+    // Main track
+    const trackGeometry = new THREE.PlaneGeometry(trackWidth, segmentLength);
+    const trackMaterial = new THREE.MeshStandardMaterial({
+        color: 0x333333,
+        side: THREE.DoubleSide,
+        roughness: 0.7,
+        metalness: 0.1
+    });
+    const track = new THREE.Mesh(trackGeometry, trackMaterial);
+    segment.add(track);
+    
+    // Racing stripes
+    [-8, -4, 0, 4, 8].forEach(x => {
+        const stripeGeo = new THREE.PlaneGeometry(0.5, segmentLength);
+        const stripeMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            emissive: 0x666666,
+            side: THREE.DoubleSide
+        });
+        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+        stripe.position.set(x, 0, 0.01);
+        segment.add(stripe);
+    });
+    
+    // Curbs
+    [-trackWidth/2, trackWidth/2].forEach(x => {
+        for(let i = 0; i < 10; i++) {
+            const color = i % 2 === 0 ? 0xff0000 : 0xffffff;
+            const curbGeo = new THREE.BoxGeometry(1, segmentLength/10, 0.2);
+            const curbMat = new THREE.MeshStandardMaterial({
+                color: color,
+                emissive: color === 0xff0000 ? 0x330000 : 0x222222
+            });
+            const curb = new THREE.Mesh(curbGeo, curbMat);
+            curb.position.set(x, -segmentLength/2 + (segmentLength/10 * i) + segmentLength/20, 0.1);
+            segment.add(curb);
+        }
+    });
+    
+    segment.rotation.x = -Math.PI/2;
+    segment.position.copy(position);
+    scene.add(segment);
+    return segment;
+}
+
+// Create initial track segments
+for(let i = 0; i < numSegments; i++) {
+    const pos = new THREE.Vector3(0, 0, -i * segmentLength);
+    trackSegments.push(createTrackSegment(pos));
+}
+
+// Motion particles
+const particleCount = 200;
+const particles = new THREE.Group();
+const particleGeometry = new THREE.SphereGeometry(0.05, 4, 4);
+const particleMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.4
+});
+
+for(let i = 0; i < particleCount; i++) {
+    const particle = new THREE.Mesh(particleGeometry, particleMaterial.clone());
+    particle.position.set(
+        (Math.random() - 0.5) * trackWidth,
+        Math.random() * 5,
+        -(Math.random() * 200)
+    );
+    particle.userData = {
+        speed: 0.2 + Math.random() * 0.3,
+        originalY: particle.position.y
+    };
+    particles.add(particle);
+}
+scene.add(particles);
+
+// Barriers and obstacles
+const obstacles = [];
+function createObstacle(z) {
+    const barrierGroup = new THREE.Group();
+    
+    // Add movement properties to the barrier group
+    barrierGroup.userData = {
+        moveDirection: Math.random() < 0.5 ? -1 : 1,
+        moveSpeed: 0.05 + Math.random() * 0.05
+    };
+    
+    // Concrete barrier
+    const barrierGeometry = new THREE.BoxGeometry(2, 1, 0.5);
+    const barrierMaterial = new THREE.MeshStandardMaterial({
+        color: 0xcccccc,
+        roughness: 0.7
+    });
+    const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
+    barrier.position.y = 0.5;
+    barrierGroup.add(barrier);
+    
+    // Tire stack
+    const tireGeometry = new THREE.TorusGeometry(0.2, 0.1, 16, 16);
+    const tireMaterial = new THREE.MeshStandardMaterial({
+        color: 0x111111,
+        roughness: 0.9
+    });
+    
+    for(let i = 0; i < 3; i++) {
+        for(let j = 0; j < 2; j++) {
+            const tire = new THREE.Mesh(tireGeometry, tireMaterial);
+            tire.rotation.x = Math.PI/2;
+            tire.position.set(-0.5 + j, 0.2 + (i * 0.2), 0);
+            barrierGroup.add(tire);
+        }
+    }
+    
+    barrierGroup.position.set((Math.random()*10)-5, 0, z);
+    scene.add(barrierGroup);
+    obstacles.push(barrierGroup);
+}
+
+for(let i = -20; i > -200; i -= 15) {
+    if(Math.random() > 0.3) createObstacle(i);
+}
+
+// Lighting
+const ambient = new THREE.AmbientLight(0x404040);
+scene.add(ambient);
+
+const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+mainLight.position.set(5, 10, 5);
+scene.add(mainLight);
+
+// Flood lights
+function createFloodLight(x, z) {
+    const light = new THREE.SpotLight(0xffaa00, 0.5);
+    light.position.set(x, 15, z);
+    light.angle = Math.PI/4;
+    light.penumbra = 0.1;
+    light.decay = 1;
+    light.distance = 50;
+    scene.add(light);
+}
+
+for(let z = 0; z > -180; z -= 40) {
+    createFloodLight(-12, z);
+    createFloodLight(12, z);
+}
+
+// Controls
+let moveLeft = false, moveRight = false;
+let useTiltControls = false;
+
+// Keyboard controls
+window.addEventListener('keydown', e => {
+    if(e.code === 'ArrowLeft') moveLeft = true;
+    if(e.code === 'ArrowRight') moveRight = true;
+});
+window.addEventListener('keyup', e => {
+    if(e.code === 'ArrowLeft') moveLeft = false;
+    if(e.code === 'ArrowRight') moveRight = false;
+});
+
+// Touch controls
+const handleTouch = (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const width = window.innerWidth;
+    if (touch) {
+        moveLeft = touch.clientX < width / 2;
+        moveRight = touch.clientX >= width / 2;
+    }
+};
+
+window.addEventListener('touchstart', handleTouch);
+window.addEventListener('touchmove', handleTouch);
+window.addEventListener('touchend', () => {
+    moveLeft = false;
+    moveRight = false;
+});
+
+// Tilt controls
+let tiltSensitivity = 2;
+let gyroData = { gamma: 0 };
+
+if (window.DeviceOrientationEvent) {
+    window.addEventListener('deviceorientation', (e) => {
+        if (useTiltControls) {
+            // gamma is the left-to-right tilt in degrees
+            gyroData.gamma = e.gamma;
+            
+            // Reset movement
+            moveLeft = false;
+            moveRight = false;
+            
+            // Apply tilt control
+            if (gyroData.gamma < -tiltSensitivity) moveLeft = true;
+            if (gyroData.gamma > tiltSensitivity) moveRight = true;
+        }
+    });
+}
+
+// Toggle tilt controls
+const tiltToggle = document.getElementById('tiltToggle');
+tiltToggle.addEventListener('click', () => {
+    useTiltControls = !useTiltControls;
+    tiltToggle.style.background = useTiltControls ? 'rgba(0,255,0,0.2)' : 'rgba(255,255,255,0.2)';
+    
+    // Request device orientation permission if needed
+    if (useTiltControls && DeviceOrientationEvent.requestPermission) {
+        DeviceOrientationEvent.requestPermission()
+            .then(response => {
+                if (response !== 'granted') {
+                    useTiltControls = false;
+                    tiltToggle.style.background = 'rgba(255,0,0,0.2)';
+                    alert('Tilt controls require device orientation permission');
+                }
+            })
+            .catch(console.error);
+    }
+});
+
+// Prevent default touch behavior
+document.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+}, { passive: false });
+
+// Handle orientation changes
+window.addEventListener('orientationchange', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Power-ups
+const powerUps = [];
+let activePowerUp = null;
+let powerUpDuration = 0;
+
+function createPowerUp(z) {
+    const types = ['speed', 'invincible', 'slowmo'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    
+    const geometry = new THREE.SphereGeometry(0.5, 8, 8);
+    const material = new THREE.MeshStandardMaterial({
+        color: type === 'speed' ? 0x00ff00 : type === 'invincible' ? 0xffff00 : 0x00ffff,
+        emissive: type === 'speed' ? 0x003300 : type === 'invincible' ? 0x333300 : 0x003333,
+        metalness: 0.8,
+        roughness: 0.2
+    });
+    
+    const powerUp = new THREE.Mesh(geometry, material);
+    powerUp.position.set((Math.random() * 12) - 6, 0.5, z);
+    powerUp.userData = { type, collected: false };
+    scene.add(powerUp);
+    powerUps.push(powerUp);
+}
+
+// Create initial power-ups
+for(let i = -40; i > -200; i -= 40) {
+    createPowerUp(i);
+}
+
+// Game loop
+let speed = 0.2;
+let score = 0;
+const scoreDiv = document.getElementById('score');
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    // Move car
+    if(moveLeft) carBody.position.x = Math.max(carBody.position.x-0.2, -8);
+    if(moveRight) carBody.position.x = Math.min(carBody.position.x+0.2, 8);
+    
+    // Rotate wheels
+    wheels.forEach(wheel => {
+        wheel.rotation.x += speed * 0.5;
+    });
+    
+    // Move track segments
+    trackSegments.forEach(segment => {
+        segment.position.z += speed;
+        if(segment.position.z > 10) {
+            segment.position.z = -((numSegments - 1) * segmentLength);
+        }
+    });
+    
+    // Update particles
+    particles.children.forEach(particle => {
+        particle.position.z += particle.userData.speed + speed;
+        if(particle.position.z > 5) {
+            particle.position.z = -200;
+            particle.position.x = (Math.random() - 0.5) * trackWidth;
+            particle.material.opacity = 0.4;
+        }
+        particle.material.opacity = Math.max(0, 0.4 * (1 - (particle.position.z + 200) / 205));
+    });
+    
+    // Move and check power-ups
+    powerUps.forEach(powerUp => {
+        if (!powerUp.userData.collected) {
+            powerUp.position.z += speed;
+            powerUp.rotation.y += 0.02;
+            
+            // Check collection
+            if(Math.abs(powerUp.position.z-carBody.position.z) < 1 && 
+               Math.abs(powerUp.position.x-carBody.position.x) < 1) {
+                powerUp.userData.collected = true;
+                powerUp.visible = false;
+                activePowerUp = powerUp.userData.type;
+                powerUpDuration = 300; // 5 seconds at 60fps
+                
+                // Show power-up message
+                const powerupDiv = document.getElementById('powerup');
+                powerupDiv.textContent = 'Power-up: ' + activePowerUp.toUpperCase();
+                powerupDiv.style.opacity = '1';
+                
+                // Play power-up sound
+                const sound = createSound('powerup');
+                sound.oscillator.start();
+                sound.oscillator.stop(audioContext.currentTime + 0.1);
+            }
+            
+            // Respawn if passed
+            if(powerUp.position.z > 5) {
+                powerUp.position.z = -200;
+                powerUp.position.x = (Math.random() * 12) - 6;
+                powerUp.userData.collected = false;
+                powerUp.visible = true;
+            }
+        }
+    });
+    
+    // Update power-up effects
+    if (activePowerUp) {
+        powerUpDuration--;
+        if (powerUpDuration <= 0) {
+            document.getElementById('powerup').style.opacity = '0';
+            activePowerUp = null;
+        }
+    }
+    
+    // Move obstacles with increasing difficulty
+    const difficultyFactor = Math.min(2, 1 + score/10000); // Max 2x difficulty
+    
+    obstacles.forEach(obj => {
+        obj.position.z += speed;
+        
+        // Add horizontal movement with increased speed based on difficulty
+        obj.position.x += obj.userData.moveDirection * obj.userData.moveSpeed * difficultyFactor;
+        
+        if (obj.position.x <= -8 || obj.position.x >= 8) {
+            obj.userData.moveDirection *= -1;
+        }
+        
+        if(obj.position.z > 5) {
+            obj.position.z = -200;
+            obj.position.x = (Math.random()*10)-5;
+            obj.userData.moveDirection = Math.random() < 0.5 ? -1 : 1;
+            obj.userData.moveSpeed = (0.05 + Math.random() * 0.05) * difficultyFactor;
+        }
+        
+        // Collision detection (skip if invincible)
+        if(!activePowerUp || activePowerUp !== 'invincible') {
+            if(Math.abs(obj.position.z-carBody.position.z) < 1 && 
+               Math.abs(obj.position.x-carBody.position.x) < 0.75) {
+                // Play crash sound
+                const sound = createSound('crash');
+                sound.oscillator.start();
+                sound.oscillator.stop(audioContext.currentTime + 0.3);
+                
+                // Update high score
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('f1RacerHighScore', highScore);
+                }
+                
+                alert('Crash! Final Score: ' + Math.floor(score));
+                window.location.reload();
+            }
+        }
+    });
+    
+    // Update score and speed based on power-ups
+    const baseScoreIncrease = speed * 10;
+    const baseSpeedIncrease = 0.0005;
+    
+    if (activePowerUp === 'speed') {
+        score += baseScoreIncrease * 2;
+        speed += baseSpeedIncrease * 2;
+    } else if (activePowerUp === 'slowmo') {
+        score += baseScoreIncrease * 0.5;
+        speed += baseSpeedIncrease * 0.5;
+    } else {
+        score += baseScoreIncrease;
+        speed += baseSpeedIncrease;
+    }
+    
+    scoreDiv.textContent = Math.floor(score);
+    if (score > highScore) {
+        highScore = score;
+        document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
+    }
+    
+    camera.position.set(carBody.position.x, 4, carBody.position.z+5);
+    camera.lookAt(carBody.position.x, carBody.position.y, carBody.position.z-5);
+    
+    renderer.render(scene, camera);
+}
+
+animate();
+</script>
+</body>
+</html>
