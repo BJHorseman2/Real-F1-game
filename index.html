@@ -66,49 +66,103 @@ document.body.appendChild(renderer.domElement);
 // F1 car
 const carBody = new THREE.Group();
 
-// Main body
+// Main body - more aerodynamic shape
 const bodyGeometry = new THREE.BoxGeometry(0.8, 0.3, 2);
 const bodyMaterial = new THREE.MeshStandardMaterial({
-    color: 0xff0000,
-    emissive: 0x330000,
-    metalness: 0.8,
-    roughness: 0.2
+    color: 0xffff00,    // Bright yellow base
+    emissive: 0xaaaa00, // Strong yellow emissive glow
+    emissiveIntensity: 1.5, // Increase the glow intensity
+    metalness: 0.4,    // Less metallic for more saturated color
+    roughness: 0.1     // Very smooth surface for better reflections
 });
 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
 carBody.add(body);
 
-// Cockpit
+// Racing stripes
+const stripesGeometry = new THREE.BoxGeometry(0.2, 0.31, 2);
+const stripesMaterial = new THREE.MeshStandardMaterial({
+    color: 0x000000,     // Black stripes
+    emissive: 0x333333,  // Slight glow
+    metalness: 0.5,
+    roughness: 0.1
+});
+const stripes = new THREE.Mesh(stripesGeometry, stripesMaterial);
+stripes.position.y = 0.01; // Slightly above the body
+carBody.add(stripes);
+
+// Cockpit with neon accents
 const cockpitGeometry = new THREE.BoxGeometry(0.4, 0.2, 0.6);
-const cockpit = new THREE.Mesh(cockpitGeometry, new THREE.MeshStandardMaterial({
-    color: 0x111111,
+const cockpitMaterial = new THREE.MeshStandardMaterial({
+    color: 0x111111,     // Dark base color
+    emissive: 0xaaaa00,  // Yellow neon glow on edges
+    emissiveIntensity: 0.7,
     metalness: 0.9,
     roughness: 0.1
-}));
+});
+const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+cockpit.position.z = -0.4;
 cockpit.position.y = 0.25;
-cockpit.position.z = -0.2;
 carBody.add(cockpit);
 
-// Wings
+// Wings with neon accents
 const wingGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.3);
 const wingMaterial = new THREE.MeshStandardMaterial({
-    color: 0x333333,
+    color: 0x222222,       // Dark base color
+    emissive: 0xffff00,    // Bright yellow emissive glow
+    emissiveIntensity: 0.9, // Strong glow intensity
+    metalness: 0.7,
+    roughness: 0.1          // Smooth surface for better reflections
+});
+
+// Front wing - wider and more aggressive
+const frontWing = new THREE.Mesh(wingGeometry, wingMaterial);
+frontWing.position.z = 0.8;
+frontWing.scale.x = 1.2; // Wider front wing
+carBody.add(frontWing);
+
+// Rear wing - taller with dual elements
+const rearWingMain = new THREE.Mesh(wingGeometry, wingMaterial);
+rearWingMain.position.z = -0.8;
+rearWingMain.scale.y = 1.5; // Taller wing
+carBody.add(rearWingMain);
+
+// Second rear wing element (DRS style)
+const rearWingUpper = new THREE.Mesh(
+    new THREE.BoxGeometry(1.0, 0.05, 0.2),
+    wingMaterial
+);
+rearWingUpper.position.z = -0.8;
+rearWingUpper.position.y = 0.15;
+carBody.add(rearWingUpper);
+
+// Air intakes on sides
+const intakeGeometry = new THREE.BoxGeometry(0.15, 0.15, 0.4);
+const intakeMaterial = new THREE.MeshStandardMaterial({
+    color: 0x111111,
+    emissive: 0x555500,
+    emissiveIntensity: 0.7,
     metalness: 0.8,
     roughness: 0.2
 });
-const frontWing = new THREE.Mesh(wingGeometry, wingMaterial);
-frontWing.position.z = 0.8;
-carBody.add(frontWing);
 
-const rearWing = new THREE.Mesh(wingGeometry, wingMaterial);
-rearWing.position.z = -0.8;
-carBody.add(rearWing);
+// Left intake
+const leftIntake = new THREE.Mesh(intakeGeometry, intakeMaterial);
+leftIntake.position.set(0.4, 0.1, -0.2);
+carBody.add(leftIntake);
 
-// Wheels
+// Right intake
+const rightIntake = new THREE.Mesh(intakeGeometry, intakeMaterial);
+rightIntake.position.set(-0.4, 0.1, -0.2);
+carBody.add(rightIntake);
+
+// Wheels with neon accents
 const wheelGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16);
 const wheelMaterial = new THREE.MeshStandardMaterial({
-    color: 0x111111,
+    color: 0x111111,       // Keep tires mostly black
+    emissive: 0x777700,    // Subtle yellow glow on the rims
+    emissiveIntensity: 0.7, // Medium glow intensity
     metalness: 0.9,
-    roughness: 0.1
+    roughness: 0.1          // Smooth reflective surface
 });
 
 const wheels = [];
@@ -189,6 +243,90 @@ for(let i = 0; i < numSegments; i++) {
     const pos = new THREE.Vector3(0, 0, -i * segmentLength);
     trackSegments.push(createTrackSegment(pos));
 }
+
+// Create simple billboards
+const billboards = [];
+
+function createBillboard(position, rotation = 0, color = 0x00ffff, adText = '') {
+    // Enhanced billboard implementation with color options and tilt
+    const width = 6;
+    const height = 3;
+    
+    // Create canvas texture for billboard if ad text is provided
+    let material;
+    if (adText) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 256;
+        const context = canvas.getContext('2d');
+        
+        // Fill background with color
+        context.fillStyle = '#' + color.toString(16).padStart(6, '0');
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add border
+        context.strokeStyle = '#ffffff';
+        context.lineWidth = 10;
+        context.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+        
+        // Add text
+        context.fillStyle = '#ffffff';
+        context.font = 'bold 70px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(adText, canvas.width/2, canvas.height/2);
+        
+        // Create texture
+        const texture = new THREE.CanvasTexture(canvas);
+        material = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.DoubleSide
+        });
+    } else {
+        // Default solid color if no ad text
+        material = new THREE.MeshBasicMaterial({
+            color: color,
+            side: THREE.DoubleSide
+        });
+    }
+    
+    // Create a simple plane geometry with a basic material
+    const billboard = new THREE.Mesh(
+        new THREE.PlaneGeometry(width, height),
+        material
+    );
+    
+    // Position billboard
+    billboard.position.copy(position);
+    
+    // Adjust rotation to face more toward the player/track center
+    if (rotation > 0) { // Left side
+        billboard.rotation.y = Math.PI/2 - Math.PI/8; // Angled toward track center
+    } else { // Right side
+        billboard.rotation.y = -Math.PI/2 + Math.PI/8; // Angled toward track center
+    }
+    
+    // Add to scene and tracking array
+    scene.add(billboard);
+    billboards.push(billboard);
+    
+    return billboard;
+}
+
+// Add billboards along the track with neon colors and F1-themed ads
+// Left side billboards
+createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -20), Math.PI/2, 0xff00ff, 'MIAMI');       // Magenta
+createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -60), Math.PI/2, 0x00ffff, 'GRAND PRIX'); // Cyan
+createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -100), Math.PI/2, 0xffff00, 'SPEED');      // Yellow
+createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -140), Math.PI/2, 0xff00ff, 'RACING');     // Magenta
+createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -180), Math.PI/2, 0x00ffff, 'CHAMPIONS');  // Cyan
+
+// Right side billboards
+createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -40), -Math.PI/2, 0x00ffff, 'F1');         // Cyan
+createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -80), -Math.PI/2, 0xff00ff, 'NEON');       // Magenta
+createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -120), -Math.PI/2, 0x00ff00, 'RACER');      // Green
+createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -160), -Math.PI/2, 0xff00ff, 'FASTEST');    // Magenta
+createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -200), -Math.PI/2, 0x00ffff, 'LAP');        // Cyan
 
 // Motion particles
 const particleCount = 200;
@@ -478,6 +616,17 @@ function animate() {
             activePowerUp = null;
         }
     }
+    
+    // Animate billboards - basic implementation
+    billboards.forEach(billboard => {
+        // Move with track
+        billboard.position.z += speed;
+        
+        // Reset position when passed
+        if(billboard.position.z > 20) {
+            billboard.position.z -= 200;
+        }
+    });
     
     // Move obstacles with increasing difficulty
     const difficultyFactor = Math.min(2, 1 + score/10000); // Max 2x difficulty
