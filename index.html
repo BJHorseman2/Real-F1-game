@@ -309,8 +309,55 @@ function createBillboard(position, rotation = 0, color = 0x00ffff, adText = '') 
     // Add to scene and tracking array
     scene.add(billboard);
     billboards.push(billboard);
-    
+
     return billboard;
+}
+
+function createGantryBillboard(z, color = 0xff6600, adText = '') {
+    const gantry = new THREE.Group();
+
+    // Support posts on each side of the track
+    const postGeometry = new THREE.BoxGeometry(0.5, 5, 0.5);
+    const postMaterial = new THREE.MeshStandardMaterial({ color: 0x777777 });
+
+    const leftPost = new THREE.Mesh(postGeometry, postMaterial);
+    leftPost.position.set(-trackWidth/2 - 1, 2.5, 0);
+    gantry.add(leftPost);
+
+    const rightPost = new THREE.Mesh(postGeometry, postMaterial);
+    rightPost.position.set(trackWidth/2 + 1, 2.5, 0);
+    gantry.add(rightPost);
+
+    // Billboard panel spanning the track
+    const width = trackWidth + 2;
+    const height = 2;
+    let material;
+    if (adText) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 128;
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#' + color.toString(16).padStart(6, '0');
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = '#ffffff';
+        context.font = 'bold 60px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(adText, canvas.width/2, canvas.height/2);
+        const texture = new THREE.CanvasTexture(canvas);
+        material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+    } else {
+        material = new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide });
+    }
+
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material);
+    sign.position.set(0, 5, 0);
+    gantry.add(sign);
+
+    gantry.position.z = z;
+    scene.add(gantry);
+    billboards.push(gantry);
+    return gantry;
 }
 
 // Add billboards along the track with neon colors and F1-themed ads
@@ -327,6 +374,9 @@ createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -80), -Math.PI/2, 0xff00f
 createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -120), -Math.PI/2, 0x00ff00, 'RACER');      // Green
 createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -160), -Math.PI/2, 0xff00ff, 'FASTEST');    // Magenta
 createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -200), -Math.PI/2, 0x00ffff, 'LAP');        // Cyan
+
+// Overhead gantry billboard spanning the track
+createGantryBillboard(-90, 0xff6600, 'WELCOME');
 
 // Motion particles
 const particleCount = 200;
