@@ -6,10 +6,10 @@
 <title>F1 Neon Racer</title>
 <style>
 body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
-#score { position:fixed; top:10px; left:10px; color:#ff0000; font: bold 20px 'Arial', sans-serif;}
-#highScore { position:fixed; top:10px; right:10px; color:#00ff00; font: bold 20px 'Arial', sans-serif;}
-#powerup { position:fixed; bottom:10px; left:10px; color:#ffff00; font: bold 20px 'Arial', sans-serif; opacity: 0;}
-#controls { position:fixed; bottom:10px; left:0; right:0; text-align:center; color:#ffffff; font: bold 16px 'Arial', sans-serif;}
+#score { position:fixed; top:10px; left:10px; color:#ff0000; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
+#highScore { position:fixed; top:10px; right:10px; color:#00ff00; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
+#powerup { position:fixed; bottom:10px; left:10px; color:#ffff00; font: bold 20px 'Arial', sans-serif; opacity: 0; pointer-events:none;}
+#controls { position:fixed; bottom:10px; left:0; right:0; text-align:center; color:#ffffff; font: bold 16px 'Arial', sans-serif; pointer-events:none;}
 #tiltToggle { position:fixed; bottom:40px; right:10px; background: rgba(255,255,255,0.2); color:#ffffff; padding:10px; border-radius:5px; font: bold 16px 'Arial', sans-serif; border:none; cursor:pointer;}
 </style>
 </head>
@@ -184,60 +184,11 @@ wheelPositions.forEach(pos => {
 carBody.position.y = 0.3;
 scene.add(carBody);
 
-// Neon trail setup
-const trailGroup = new THREE.Group();
-scene.add(trailGroup);
-const trailGeometry = new THREE.PlaneGeometry(0.5, 1);
-const trailMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffff00,
-    transparent: true,
-    opacity: 0.5,
-    side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending
-});
-const trailSegments = [];
-let trailTimer = 0;
-
 // Track segments
 const trackSegments = [];
 const segmentLength = 20;
 const numSegments = 12;
 const trackWidth = 20;
-
-// Cyberpunk skyscrapers
-const skyscrapers = [];
-
-// Neon data streams
-const dataStreams = new THREE.Group();
-scene.add(dataStreams);
-
-function createDataStream() {
-    const geometry = new THREE.BoxGeometry(0.1, 1.5, 0.1);
-    const material = new THREE.MeshBasicMaterial({color: 0x00ffcc});
-    const stream = new THREE.Mesh(geometry, material);
-    stream.position.set((Math.random()-0.5)*trackWidth, 5 + Math.random()*5, -(Math.random()*200));
-    stream.userData.speed = 0.2 + Math.random()*0.3;
-    dataStreams.add(stream);
-}
-
-function createSkyscraper(z) {
-    const height = 20 + Math.random() * 20;
-    const geometry = new THREE.BoxGeometry(4, height, 4);
-    const material = new THREE.MeshStandardMaterial({
-        color: 0x111111,
-        emissive: Math.random() > 0.5 ? 0x00ffff : 0xff00ff,
-        emissiveIntensity: 1.2,
-        metalness: 0.6,
-        roughness: 0.3
-    });
-    const building = new THREE.Mesh(geometry, material);
-    building.position.y = height / 2;
-    building.position.x = (trackWidth / 2 + 5) * (Math.random() > 0.5 ? 1 : -1) + (Math.random() * 5);
-    building.position.z = z;
-    scene.add(building);
-    skyscrapers.push(building);
-}
-
 
 function createTrackSegment(position) {
     const segment = new THREE.Group();
@@ -291,16 +242,6 @@ function createTrackSegment(position) {
 for(let i = 0; i < numSegments; i++) {
     const pos = new THREE.Vector3(0, 0, -i * segmentLength);
     trackSegments.push(createTrackSegment(pos));
-}
-
-// Create skyscrapers along the track
-for(let i = -20; i > -200; i -= 20) {
-    createSkyscraper(i);
-}
-
-// Create data streams
-for(let i = 0; i < 100; i++) {
-    createDataStream();
 }
 
 // Create simple billboards
@@ -399,7 +340,7 @@ function createGantryBillboard(z, color = 0xff6600, adText = '') {
         context.fillStyle = '#' + color.toString(16).padStart(6, '0');
         context.fillRect(0, 0, canvas.width, canvas.height);
         context.fillStyle = '#ffffff';
-        context.font = 'bold 50px Arial';
+        context.font = 'bold 60px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillText(adText, canvas.width/2, canvas.height/2);
@@ -623,19 +564,13 @@ let activePowerUp = null;
 let powerUpDuration = 0;
 
 function createPowerUp(z) {
-    const types = ['speed', 'invincible', 'slowmo', 'shield', 'scoreboost'];
+    const types = ['speed', 'invincible', 'slowmo'];
     const type = types[Math.floor(Math.random() * types.length)];
     
     const geometry = new THREE.SphereGeometry(0.5, 8, 8);
     const material = new THREE.MeshStandardMaterial({
-        color: type === 'speed' ? 0x00ff00 :
-               type === 'invincible' ? 0xffff00 :
-               type === 'slowmo' ? 0x00ffff :
-               type === 'shield' ? 0xff00ff : 0xff8800,
-        emissive: type === 'speed' ? 0x003300 :
-                 type === 'invincible' ? 0x333300 :
-                 type === 'slowmo' ? 0x003333 :
-                 type === 'shield' ? 0x330033 : 0x332200,
+        color: type === 'speed' ? 0x00ff00 : type === 'invincible' ? 0xffff00 : 0x00ffff,
+        emissive: type === 'speed' ? 0x003300 : type === 'invincible' ? 0x333300 : 0x003333,
         metalness: 0.8,
         roughness: 0.2
     });
@@ -668,57 +603,12 @@ function animate() {
     wheels.forEach(wheel => {
         wheel.rotation.x += speed * 0.5;
     });
-
-    // Neon trail effect
-    trailTimer++;
-    if(trailTimer % 3 === 0) {
-        const segment = new THREE.Mesh(trailGeometry, trailMaterial.clone());
-        segment.rotation.x = -Math.PI / 2;
-        segment.position.set(carBody.position.x, 0.01, carBody.position.z - 0.5);
-        segment.userData.life = 20;
-        trailGroup.add(segment);
-        trailSegments.push(segment);
-    }
-
-    for(let i = trailSegments.length - 1; i >= 0; i--) {
-        const t = trailSegments[i];
-        t.userData.life--;
-        t.material.opacity *= 0.9;
-        t.scale.multiplyScalar(0.98);
-        t.position.y += 0.01;
-        if(t.userData.life <= 0) {
-            trailGroup.remove(t);
-            trailSegments.splice(i,1);
-        }
-    }
     
     // Move track segments
     trackSegments.forEach(segment => {
         segment.position.z += speed;
         if(segment.position.z > 10) {
             segment.position.z = -((numSegments - 1) * segmentLength);
-        }
-    });
-
-    // Move skyscrapers with the track
-    skyscrapers.forEach(building => {
-        building.position.z += speed;
-        if(building.position.z > 20) {
-            building.position.z -= 200;
-            building.position.x = (trackWidth / 2 + 5) * (Math.random() > 0.5 ? 1 : -1) + (Math.random() * 5);
-        }
-    });
-
-    // Animate data streams
-    dataStreams.children.forEach(stream => {
-        stream.position.z += speed;
-        stream.position.y -= stream.userData.speed;
-        if(stream.position.y < 0) {
-            stream.position.y = 10;
-            stream.position.x = (Math.random()-0.5) * trackWidth;
-        }
-        if(stream.position.z > 5) {
-            stream.position.z = -200;
         }
     });
     
@@ -808,26 +698,21 @@ function animate() {
             obj.userData.moveSpeed = (0.05 + Math.random() * 0.05) * difficultyFactor;
         }
         
-        // Collision detection
-        if(Math.abs(obj.position.z-carBody.position.z) < 1 &&
-           Math.abs(obj.position.x-carBody.position.x) < 0.75) {
-            if(activePowerUp === 'invincible') {
-                // ignore collision
-            } else if(activePowerUp === 'shield') {
-                activePowerUp = null;
-                document.getElementById('powerup').style.opacity = '0';
-            } else {
+        // Collision detection (skip if invincible)
+        if(!activePowerUp || activePowerUp !== 'invincible') {
+            if(Math.abs(obj.position.z-carBody.position.z) < 1 && 
+               Math.abs(obj.position.x-carBody.position.x) < 0.75) {
                 // Play crash sound
                 const sound = createSound('crash');
                 sound.oscillator.start();
                 sound.oscillator.stop(audioContext.currentTime + 0.3);
-
+                
                 // Update high score
                 if (score > highScore) {
                     highScore = score;
                     localStorage.setItem('f1RacerHighScore', highScore);
                 }
-
+                
                 alert('Crash! Final Score: ' + Math.floor(score));
                 window.location.reload();
             }
@@ -844,9 +729,6 @@ function animate() {
     } else if (activePowerUp === 'slowmo') {
         score += baseScoreIncrease * 0.5;
         speed += baseSpeedIncrease * 0.5;
-    } else if (activePowerUp === 'scoreboost') {
-        score += baseScoreIncrease * 3;
-        speed += baseSpeedIncrease;
     } else {
         score += baseScoreIncrease;
         speed += baseSpeedIncrease;
