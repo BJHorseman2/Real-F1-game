@@ -204,6 +204,41 @@ const segmentLength = 20;
 const numSegments = 12;
 const trackWidth = 20;
 
+// Cyberpunk skyscrapers
+const skyscrapers = [];
+
+// Neon data streams
+const dataStreams = new THREE.Group();
+scene.add(dataStreams);
+
+function createDataStream() {
+    const geometry = new THREE.BoxGeometry(0.1, 1.5, 0.1);
+    const material = new THREE.MeshBasicMaterial({color: 0x00ffcc});
+    const stream = new THREE.Mesh(geometry, material);
+    stream.position.set((Math.random()-0.5)*trackWidth, 5 + Math.random()*5, -(Math.random()*200));
+    stream.userData.speed = 0.2 + Math.random()*0.3;
+    dataStreams.add(stream);
+}
+
+function createSkyscraper(z) {
+    const height = 20 + Math.random() * 20;
+    const geometry = new THREE.BoxGeometry(4, height, 4);
+    const material = new THREE.MeshStandardMaterial({
+        color: 0x111111,
+        emissive: Math.random() > 0.5 ? 0x00ffff : 0xff00ff,
+        emissiveIntensity: 1.2,
+        metalness: 0.6,
+        roughness: 0.3
+    });
+    const building = new THREE.Mesh(geometry, material);
+    building.position.y = height / 2;
+    building.position.x = (trackWidth / 2 + 5) * (Math.random() > 0.5 ? 1 : -1) + (Math.random() * 5);
+    building.position.z = z;
+    scene.add(building);
+    skyscrapers.push(building);
+}
+
+
 function createTrackSegment(position) {
     const segment = new THREE.Group();
     
@@ -256,6 +291,16 @@ function createTrackSegment(position) {
 for(let i = 0; i < numSegments; i++) {
     const pos = new THREE.Vector3(0, 0, -i * segmentLength);
     trackSegments.push(createTrackSegment(pos));
+}
+
+// Create skyscrapers along the track
+for(let i = -20; i > -200; i -= 20) {
+    createSkyscraper(i);
+}
+
+// Create data streams
+for(let i = 0; i < 100; i++) {
+    createDataStream();
 }
 
 // Create simple billboards
@@ -652,6 +697,28 @@ function animate() {
         segment.position.z += speed;
         if(segment.position.z > 10) {
             segment.position.z = -((numSegments - 1) * segmentLength);
+        }
+    });
+
+    // Move skyscrapers with the track
+    skyscrapers.forEach(building => {
+        building.position.z += speed;
+        if(building.position.z > 20) {
+            building.position.z -= 200;
+            building.position.x = (trackWidth / 2 + 5) * (Math.random() > 0.5 ? 1 : -1) + (Math.random() * 5);
+        }
+    });
+
+    // Animate data streams
+    dataStreams.children.forEach(stream => {
+        stream.position.z += speed;
+        stream.position.y -= stream.userData.speed;
+        if(stream.position.y < 0) {
+            stream.position.y = 10;
+            stream.position.x = (Math.random()-0.5) * trackWidth;
+        }
+        if(stream.position.z > 5) {
+            stream.position.z = -200;
         }
     });
     
