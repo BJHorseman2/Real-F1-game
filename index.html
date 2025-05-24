@@ -647,8 +647,12 @@ function createBuilding(x, z) {
     cityScape.add(building);
 }
 
+// Keep buildings away from the racing surface
+const buildingMargin = 10; // distance from the edge of the track
 for (let i = 0; i < 40; i++) {
-    const x = (Math.random() - 0.5) * 80;
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const offset = (trackWidth / 2) + buildingMargin + Math.random() * 20;
+    const x = side * offset;
     const z = -250 - Math.random() * 50;
     createBuilding(x, z);
 }
