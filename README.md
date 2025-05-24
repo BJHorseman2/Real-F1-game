@@ -30,7 +30,7 @@ This game is built using:
 ## Future Enhancements
 
 - Additional power-up types
-- Longer laps for each race
+- Longer laps for each race (40 segments per lap)
 - Multiple race tracks
 - Vehicle customization
 - Multiplayer functionality

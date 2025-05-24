@@ -9,7 +9,7 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 #score { position:fixed; top:10px; left:10px; color:#ff0000; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
 #highScore { position:fixed; top:10px; right:10px; color:#00ff00; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
 #powerup { position:fixed; bottom:10px; left:10px; color:#ffff00; font: bold 20px 'Arial', sans-serif; opacity: 0; pointer-events:none;}
-#level { position:fixed; top:40px; left:10px; color:#00ffff; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
+#lap { position:fixed; top:40px; left:10px; color:#00ffff; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
 #controls { position:fixed; bottom:10px; left:0; right:0; text-align:center; color:#ffffff; font: bold 16px 'Arial', sans-serif; pointer-events:none;}
 #tiltToggle { position:fixed; bottom:40px; right:10px; background: rgba(255,255,255,0.2); color:#ffffff; padding:10px; border-radius:5px; font: bold 16px 'Arial', sans-serif; border:none; cursor:pointer;}
 </style>
@@ -17,7 +17,7 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 <body>
 <div id="score">0</div>
 <div id="highScore">High Score: 0</div>
-<div id="level">Level: 1</div>
+<div id="lap">Lap: 1</div>
 <div id="powerup">Power-up Active!</div>
 <div id="controls">Tap left/right sides to steer<br>or use tilt controls</div>
 <button id="tiltToggle">Toggle Tilt Controls</button>
@@ -27,12 +27,12 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 let highScore = localStorage.getItem('f1RacerHighScore') || 0;
 document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
 
-// Level tracking
-let level = 1;
-const maxLevel = 5;
-const levelThreshold = 5000;
-const levelDiv = document.getElementById('level');
-levelDiv.textContent = `Level: ${level}/${maxLevel}`;
+// Lap tracking
+let lap = 1;
+const totalLaps = 5;
+const lapThreshold = 5000; // unused but kept for compatibility
+const lapDiv = document.getElementById('lap');
+lapDiv.textContent = `Lap: ${lap}/${totalLaps}`;
 let gameWon = false;
 
 // Sound effects
@@ -245,7 +245,7 @@ for (let i = -10; i > -60; i -= 20) {
 const trackSegments = [];
 const segmentLength = 20;
 // Increased number of segments so each lap is longer
-const numSegments = 24;
+const numSegments = 40;
 const trackWidth = 20;
 
 // Start/finish lines
@@ -908,17 +908,17 @@ function animate() {
         localStorage.setItem('f1RacerHighScore', highScore);
     }
 
-    // Lap and level progression
+    // Lap progression
     lapDistance += speed;
     if (lapDistance >= trackLength) {
         lapDistance -= trackLength;
-        if (level < maxLevel) {
-            level++;
-            levelDiv.textContent = `Level: ${level}/${maxLevel}`;
-            if (level === maxLevel) {
+        if (lap < totalLaps) {
+            lap++;
+            lapDiv.textContent = `Lap: ${lap}/${totalLaps}`;
+            if (lap === totalLaps) {
                 finishLine.visible = true;
             } else {
-                alert('Level ' + level);
+                alert('Lap ' + (lap - 1) + ' complete!');
             }
         } else if (!gameWon) {
             gameWon = true;
@@ -926,7 +926,7 @@ function animate() {
                 highScore = score;
                 localStorage.setItem('f1RacerHighScore', highScore);
             }
-            alert('You win! Final Score: ' + Math.floor(score));
+            alert('You won the race! Final Score: ' + Math.floor(score));
             window.location.reload();
         }
     }
