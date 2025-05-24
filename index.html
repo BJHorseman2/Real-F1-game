@@ -84,7 +84,7 @@ function createSound(type) {
 }
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x000000, 10, 50);
+scene.fog = new THREE.Fog(0x000000, 10, 200);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -628,6 +628,32 @@ for(let z = 0; z > -180; z -= 40) {
     createFloodLight(12, z);
 }
 
+// -------------------- Cityscape --------------------
+const cityScape = new THREE.Group();
+
+function createBuilding(x, z) {
+    const width = 2 + Math.random() * 3;
+    const depth = 2 + Math.random() * 3;
+    const height = 5 + Math.random() * 15;
+    const geometry = new THREE.BoxGeometry(width, height, depth);
+    const material = new THREE.MeshStandardMaterial({
+        color: 0x222222,
+        emissive: 0x333333,
+        roughness: 0.6,
+        metalness: 0.3
+    });
+    const building = new THREE.Mesh(geometry, material);
+    building.position.set(x, height / 2, z);
+    cityScape.add(building);
+}
+
+for (let i = 0; i < 40; i++) {
+    const x = (Math.random() - 0.5) * 80;
+    const z = -250 - Math.random() * 50;
+    createBuilding(x, z);
+}
+scene.add(cityScape);
+
 // Controls
 let moveLeft = false, moveRight = false;
 let useTiltControls = false;
@@ -869,10 +895,18 @@ function animate() {
     billboards.forEach(billboard => {
         // Move with track
         billboard.position.z += speed;
-        
+
         // Reset position when passed
         if(billboard.position.z > 20) {
             billboard.position.z -= 200;
+        }
+    });
+
+    // Parallax movement for distant cityscape
+    cityScape.children.forEach(building => {
+        building.position.z += speed * 0.5;
+        if (building.position.z > 50) {
+            building.position.z -= 300;
         }
     });
     
