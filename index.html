@@ -184,6 +184,32 @@ wheelPositions.forEach(pos => {
 carBody.position.y = 0.3;
 scene.add(carBody);
 
+// -------------------- AI Cars --------------------
+// Simple opponents cloned from the player's car
+const aiCars = [];
+
+function createAICar(z) {
+    const aiCar = carBody.clone(true);
+    aiCar.traverse(obj => {
+        if (obj.material) obj.material = obj.material.clone();
+        if (obj.material && obj.material.color) {
+            obj.material.color.setHSL(Math.random(), 0.7, 0.5);
+        }
+    });
+    aiCar.position.set((Math.random() * 10) - 5, 0.3, z);
+    aiCar.userData = {
+        speed: 0.05 + Math.random() * 0.1,
+        direction: Math.random() < 0.5 ? -1 : 1
+    };
+    scene.add(aiCar);
+    aiCars.push(aiCar);
+}
+
+// Spawn a couple of AI cars ahead on the track
+for (let i = -10; i > -60; i -= 20) {
+    createAICar(i);
+}
+
 // Track segments
 const trackSegments = [];
 const segmentLength = 20;
@@ -713,6 +739,40 @@ function animate() {
                     localStorage.setItem('f1RacerHighScore', highScore);
                 }
                 
+                alert('Crash! Final Score: ' + Math.floor(score));
+                window.location.reload();
+            }
+        }
+    });
+
+    // Move AI cars
+    aiCars.forEach(ai => {
+        ai.position.z += speed + ai.userData.speed;
+        ai.position.x += ai.userData.direction * 0.05;
+        if (ai.position.x <= -8 || ai.position.x >= 8) {
+            ai.userData.direction *= -1;
+        }
+
+        if(ai.position.z > 5) {
+            ai.position.z = -200;
+            ai.position.x = (Math.random()*10)-5;
+            ai.userData.speed = 0.05 + Math.random()*0.1;
+            ai.userData.direction = Math.random() < 0.5 ? -1 : 1;
+        }
+
+        // Collision detection (skip if invincible)
+        if(!activePowerUp || activePowerUp !== 'invincible') {
+            if(Math.abs(ai.position.z-carBody.position.z) < 1 &&
+               Math.abs(ai.position.x-carBody.position.x) < 0.75) {
+                const sound = createSound('crash');
+                sound.oscillator.start();
+                sound.oscillator.stop(audioContext.currentTime + 0.3);
+
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('f1RacerHighScore', highScore);
+                }
+
                 alert('Crash! Final Score: ' + Math.floor(score));
                 window.location.reload();
             }
