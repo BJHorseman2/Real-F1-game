@@ -492,7 +492,9 @@ function createGantryBillboard(z, color = 0xff6600, adText = '') {
         context.fillStyle = '#' + color.toString(16).padStart(6, '0');
         context.fillRect(0, 0, canvas.width, canvas.height);
         context.fillStyle = '#ffffff';
-        context.font = 'bold 60px Arial';
+        // Make the printed text on the gantry slightly smaller for better
+        // readability and to avoid overflowing the sign
+        context.font = 'bold 40px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillText(adText, canvas.width/2, canvas.height/2);
