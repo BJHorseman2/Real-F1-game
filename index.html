@@ -242,6 +242,44 @@ function createAICar(z) {
             }
         }
     });
+
+    // Add a simple driver helmet for extra detail
+    const helmetGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+    const helmetMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: color,
+        emissiveIntensity: 0.8,
+        metalness: 0.3,
+        roughness: 0.2
+    });
+    const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
+    helmet.position.set(0, 0.35, -0.4);
+    aiCar.add(helmet);
+
+    // Add number decals on the sides using a small canvas texture
+    const carNumber = Math.floor(Math.random() * 99) + 1;
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(carNumber.toString(), canvas.width / 2, canvas.height / 2);
+    const numberTexture = new THREE.CanvasTexture(canvas);
+    const numberMaterial = new THREE.MeshBasicMaterial({ map: numberTexture, transparent: true });
+    const numberPlane = new THREE.PlaneGeometry(0.4, 0.4);
+    const leftNumber = new THREE.Mesh(numberPlane, numberMaterial);
+    leftNumber.position.set(0.5, 0.2, 0);
+    leftNumber.rotation.y = -Math.PI / 2;
+    const rightNumber = leftNumber.clone();
+    rightNumber.position.set(-0.5, 0.2, 0);
+    rightNumber.rotation.y = Math.PI / 2;
+    aiCar.add(leftNumber);
+    aiCar.add(rightNumber);
     const startLane = lanes[Math.floor(Math.random() * lanes.length)];
     aiCar.position.set(startLane, 0.3, z);
     aiCar.userData = {
