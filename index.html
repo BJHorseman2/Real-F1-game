@@ -293,8 +293,9 @@ function createAICar(z) {
     aiCars.push(aiCar);
 }
 
-// Spawn a couple of AI cars ahead on the track
-for (let i = -10; i > -60; i -= 20) {
+// Position AI cars behind the start line. They will remain
+// stationary until the race begins.
+for (let i = 6; i <= 10; i += 2) {
     createAICar(i);
 }
 
@@ -916,8 +917,10 @@ function animate() {
         }
     });
 
-    // Move AI cars with basic lane changing logic
+    // Move AI cars with basic lane changing logic once the race has started
     aiCars.forEach(ai => {
+        if (!raceStarted) return; // keep them on the grid until the start
+
         ai.position.z += speed + ai.userData.speed;
 
         // Slight speed variation
