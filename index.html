@@ -9,6 +9,7 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 #score { position:fixed; top:10px; left:10px; color:#ff0000; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
 #highScore { position:fixed; top:10px; right:10px; color:#00ff00; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
 #powerup { position:fixed; bottom:10px; left:10px; color:#ffff00; font: bold 20px 'Arial', sans-serif; opacity: 0; pointer-events:none;}
+#level { position:fixed; top:40px; left:10px; color:#00ffff; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
 #controls { position:fixed; bottom:10px; left:0; right:0; text-align:center; color:#ffffff; font: bold 16px 'Arial', sans-serif; pointer-events:none;}
 #tiltToggle { position:fixed; bottom:40px; right:10px; background: rgba(255,255,255,0.2); color:#ffffff; padding:10px; border-radius:5px; font: bold 16px 'Arial', sans-serif; border:none; cursor:pointer;}
 </style>
@@ -16,6 +17,7 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 <body>
 <div id="score">0</div>
 <div id="highScore">High Score: 0</div>
+<div id="level">Level: 1</div>
 <div id="powerup">Power-up Active!</div>
 <div id="controls">Tap left/right sides to steer<br>or use tilt controls</div>
 <button id="tiltToggle">Toggle Tilt Controls</button>
@@ -24,6 +26,14 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 // Load and store high score
 let highScore = localStorage.getItem('f1RacerHighScore') || 0;
 document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
+
+// Level tracking
+let level = 1;
+const maxLevel = 5;
+const levelThreshold = 5000;
+const levelDiv = document.getElementById('level');
+levelDiv.textContent = `Level: ${level}/${maxLevel}`;
+let gameWon = false;
 
 // Sound effects
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -727,7 +737,7 @@ function animate() {
     });
     
     // Move obstacles with increasing difficulty
-    const difficultyFactor = Math.min(2, 1 + score/10000); // Max 2x difficulty
+    const difficultyFactor = Math.min(2, 1 + score/20000); // More gradual
     
     obstacles.forEach(obj => {
         obj.position.z += speed;
@@ -828,7 +838,7 @@ function animate() {
     
     // Update score and speed based on power-ups
     const baseScoreIncrease = speed * 10;
-    const baseSpeedIncrease = 0.0005;
+    const baseSpeedIncrease = 0.0003; // slower ramp up
     
     if (activePowerUp === 'speed') {
         score += baseScoreIncrease * 2;
@@ -845,6 +855,22 @@ function animate() {
     if (score > highScore) {
         highScore = score;
         document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
+    }
+
+    // Level progression
+    if (score >= level * levelThreshold && level < maxLevel) {
+        level++;
+        levelDiv.textContent = `Level: ${level}/${maxLevel}`;
+        alert('Level ' + level);
+    }
+    if (score >= levelThreshold * maxLevel && !gameWon) {
+        gameWon = true;
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('f1RacerHighScore', highScore);
+        }
+        alert('You win! Final Score: ' + Math.floor(score));
+        window.location.reload();
     }
     
     camera.position.set(carBody.position.x, 4, carBody.position.z+5);
