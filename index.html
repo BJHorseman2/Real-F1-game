@@ -189,6 +189,7 @@ scene.add(carBody);
 const aiCars = [];
 
 function createAICar(z) {
+    const lanes = [-6, -2, 2, 6];
     const aiCar = carBody.clone(true);
     aiCar.traverse(obj => {
         if (obj.material) obj.material = obj.material.clone();
@@ -196,10 +197,14 @@ function createAICar(z) {
             obj.material.color.setHSL(Math.random(), 0.7, 0.5);
         }
     });
-    aiCar.position.set((Math.random() * 10) - 5, 0.3, z);
+    const startLane = lanes[Math.floor(Math.random() * lanes.length)];
+    aiCar.position.set(startLane, 0.3, z);
     aiCar.userData = {
         speed: 0.05 + Math.random() * 0.1,
-        direction: Math.random() < 0.5 ? -1 : 1
+        lane: startLane,
+        targetLane: startLane,
+        laneChangeTimer: Math.floor(Math.random() * 120) + 60,
+        laneChangeSpeed: 0.1
     };
     scene.add(aiCar);
     aiCars.push(aiCar);
@@ -745,19 +750,44 @@ function animate() {
         }
     });
 
-    // Move AI cars
+    // Move AI cars with basic lane changing logic
     aiCars.forEach(ai => {
         ai.position.z += speed + ai.userData.speed;
-        ai.position.x += ai.userData.direction * 0.05;
-        if (ai.position.x <= -8 || ai.position.x >= 8) {
-            ai.userData.direction *= -1;
+
+        // Slight speed variation
+        ai.userData.speed += (Math.random() - 0.5) * 0.001;
+        ai.userData.speed = Math.min(Math.max(ai.userData.speed, 0.03), 0.12);
+
+        // Decide when to change lanes
+        ai.userData.laneChangeTimer--;
+        if (ai.userData.laneChangeTimer <= 0) {
+            const lanes = [-6, -2, 2, 6];
+            ai.userData.targetLane = lanes[Math.floor(Math.random() * lanes.length)];
+            ai.userData.laneChangeTimer = Math.floor(Math.random() * 120) + 60;
         }
 
+        // Smoothly move toward target lane
+        const dx = ai.userData.targetLane - ai.position.x;
+        const step = Math.sign(dx) * Math.min(Math.abs(dx), ai.userData.laneChangeSpeed);
+        ai.position.x += step;
+
+        if (Math.abs(dx) < 0.05) {
+            ai.position.x = ai.userData.targetLane;
+            ai.userData.lane = ai.userData.targetLane;
+        }
+
+        if (ai.position.x <= -8) ai.position.x = -8;
+        if (ai.position.x >= 8) ai.position.x = 8;
+
         if(ai.position.z > 5) {
+            const lanes = [-6, -2, 2, 6];
+            const lane = lanes[Math.floor(Math.random() * lanes.length)];
             ai.position.z = -200;
-            ai.position.x = (Math.random()*10)-5;
+            ai.position.x = lane;
             ai.userData.speed = 0.05 + Math.random()*0.1;
-            ai.userData.direction = Math.random() < 0.5 ? -1 : 1;
+            ai.userData.lane = lane;
+            ai.userData.targetLane = lane;
+            ai.userData.laneChangeTimer = Math.floor(Math.random() * 120) + 60;
         }
 
         // Collision detection (skip if invincible)
