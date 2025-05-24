@@ -197,11 +197,20 @@ function createAICar(z) {
     if (Math.abs(hue - 0.16) < 0.08) {
         hue = (hue + 0.5) % 1;
     }
-    color.setHSL(hue, 0.7, 0.5);
+    // Use fully saturated colors for a neon look
+    color.setHSL(hue, 1, 0.5);
     aiCar.traverse(obj => {
         if (obj.material) obj.material = obj.material.clone();
-        if (obj.material && obj.material.color) {
-            obj.material.color.copy(color);
+        if (obj.material) {
+            if (obj.material.color) {
+                obj.material.color.copy(color);
+            }
+            if (obj.material.emissive) {
+                obj.material.emissive.copy(color);
+            }
+            if (obj.material.emissiveIntensity !== undefined) {
+                obj.material.emissiveIntensity = Math.max(obj.material.emissiveIntensity, 1.2);
+            }
         }
     });
     const startLane = lanes[Math.floor(Math.random() * lanes.length)];
