@@ -12,7 +12,10 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 #lap { position:fixed; top:40px; left:10px; color:#00ffff; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
 #controls { position:fixed; bottom:10px; left:0; right:0; text-align:center; color:#ffffff; font: bold 16px 'Arial', sans-serif; pointer-events:none;}
 #tiltToggle { position:fixed; bottom:40px; right:10px; background: rgba(255,255,255,0.2); color:#ffffff; padding:10px; border-radius:5px; font: bold 16px 'Arial', sans-serif; border:none; cursor:pointer;}
-#countdown { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:#ffffff; font: bold 80px 'Arial', sans-serif; pointer-events:none;}
+#countdown { position:fixed; top:55%; left:50%; transform:translate(-50%, -50%); color:#ffffff; font: bold 80px 'Arial', sans-serif; pointer-events:none;}
+#startLights { position:fixed; top:40%; left:50%; transform:translateX(-50%); display:flex; gap:15px; }
+#startLights .light { width:40px; height:40px; border-radius:50%; background:#440000; border:2px solid #ffffff; }
+#startLights .light.on { background:#ff0000; }
 </style>
 </head>
 <body>
@@ -22,6 +25,13 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 <div id="powerup">Power-up Active!</div>
 <div id="controls">Tap left/right sides to steer<br>or use tilt controls</div>
 <button id="tiltToggle">Toggle Tilt Controls</button>
+<div id="startLights">
+    <div class="light"></div>
+    <div class="light"></div>
+    <div class="light"></div>
+    <div class="light"></div>
+    <div class="light"></div>
+</div>
 <div id="countdown"></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
 <script>
@@ -697,20 +707,29 @@ let lapDistance = 0;
 const trackLength = segmentLength * numSegments;
 const scoreDiv = document.getElementById('score');
 const countdownDiv = document.getElementById('countdown');
+const lights = document.querySelectorAll('#startLights .light');
 
-function startCountdown() {
-    let count = 3;
+function startLightSequence() {
+    let index = 0;
     const show = () => {
-        countdownDiv.textContent = count > 0 ? count : 'GO!';
-        const beep = createSound('beep');
-        beep.oscillator.start();
-        beep.oscillator.stop(audioContext.currentTime + 0.2);
-        if (count === 0) {
-            setTimeout(() => { countdownDiv.style.display = 'none'; }, 500);
-            speed = startSpeed;
-        }
-        if (count-- >= 0) {
-            setTimeout(show, 1000);
+        if (index < lights.length) {
+            lights[index].classList.add('on');
+            const beep = createSound('beep');
+            beep.oscillator.start();
+            beep.oscillator.stop(audioContext.currentTime + 0.2);
+            index++;
+            setTimeout(show, 700);
+        } else {
+            const beep = createSound('beep');
+            beep.oscillator.start();
+            beep.oscillator.stop(audioContext.currentTime + 0.2);
+            setTimeout(() => {
+                document.getElementById('startLights').style.display = 'none';
+                countdownDiv.textContent = 'GO!';
+                countdownDiv.style.display = 'block';
+                speed = startSpeed;
+                setTimeout(() => { countdownDiv.style.display = 'none'; }, 500);
+            }, 300);
         }
     };
     show();
@@ -965,7 +984,7 @@ function animate() {
 }
 
 animate();
-startCountdown();
+startLightSequence();
 </script>
 </body>
 </html>
