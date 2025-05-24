@@ -82,6 +82,7 @@
         let carBody, trackSegments = [], score = 0;
         let gameStarted = false, gameOver = false;
         let moveLeft = false, moveRight = false;
+        let accelerate = false, decelerate = false;
         let speed = 0.2;
 
         // Track configuration
@@ -210,9 +211,12 @@
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
-            
+
             if (!gameStarted || gameOver) return;
-            
+
+            if (accelerate) speed = Math.min(speed + 0.01, 3);
+            if (decelerate) speed = Math.max(speed - 0.02, 0);
+
             // Update score
             score += speed;
             document.getElementById('score').textContent = Math.floor(score);
@@ -253,6 +257,12 @@
                 case 'ArrowRight':
                     moveRight = true;
                     break;
+                case 'ArrowUp':
+                    accelerate = true;
+                    break;
+                case 'ArrowDown':
+                    decelerate = true;
+                    break;
             }
         }
 
@@ -263,6 +273,12 @@
                     break;
                 case 'ArrowRight':
                     moveRight = false;
+                    break;
+                case 'ArrowUp':
+                    accelerate = false;
+                    break;
+                case 'ArrowDown':
+                    decelerate = false;
                     break;
             }
         }
