@@ -529,7 +529,8 @@ createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -160), -Math.PI/2, 0xff00
 createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -200), -Math.PI/2, 0x00ffff, 'LAP');        // Cyan
 
 // Overhead gantry billboard spanning the track
-createGantryBillboard(-90, 0xadd8e6, 'Introducing Mint Condition™');
+// Use a darker color for better contrast on the gantry billboard
+createGantryBillboard(-90, 0x003366, 'Introducing Mint Condition™');
 
 // Motion particles
 const particleCount = 200;
