@@ -244,7 +244,8 @@ for (let i = -10; i > -60; i -= 20) {
 // Track segments
 const trackSegments = [];
 const segmentLength = 20;
-const numSegments = 12;
+// Increased number of segments so each lap is longer
+const numSegments = 24;
 const trackWidth = 20;
 
 // Start/finish lines
@@ -903,6 +904,8 @@ function animate() {
     if (score > highScore) {
         highScore = score;
         document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
+        // Persist the new high score immediately for continuity
+        localStorage.setItem('f1RacerHighScore', highScore);
     }
 
     // Lap and level progression

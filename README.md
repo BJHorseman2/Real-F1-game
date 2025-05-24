@@ -6,7 +6,7 @@ A fast-paced racing game built with Three.js featuring neon aesthetics, obstacle
 
 - Immersive 3D racing experience
 - Mobile-friendly controls (touch and tilt)
-- Score tracking and high score saving
+- Score tracking with automatic high score saving for continuity
 - Power-up system
 - Neon visual style
 - On-screen UI elements allow touch input to pass through
@@ -30,6 +30,7 @@ This game is built using:
 ## Future Enhancements
 
 - Additional power-up types
+- Longer laps for each race
 - Multiple race tracks
 - Vehicle customization
 - Multiplayer functionality
