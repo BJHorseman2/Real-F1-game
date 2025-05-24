@@ -247,6 +247,37 @@ const segmentLength = 20;
 const numSegments = 12;
 const trackWidth = 20;
 
+// Start/finish lines
+let startLine, finishLine;
+
+function createLine(z, label) {
+    const width = trackWidth;
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    const squares = 8;
+    for(let i = 0; i < squares; i++) {
+        ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#000000';
+        ctx.fillRect(i * (canvas.width / squares), 0, canvas.width / squares, canvas.height);
+    }
+    if (label) {
+        ctx.fillStyle = '#ff0000';
+        ctx.font = 'bold 28px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, canvas.width / 2, canvas.height / 2);
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+    const geometry = new THREE.PlaneGeometry(width, 1);
+    const line = new THREE.Mesh(geometry, material);
+    line.rotation.x = -Math.PI/2;
+    line.position.set(0, 0.02, z);
+    scene.add(line);
+    return line;
+}
+
 function createTrackSegment(position) {
     const segment = new THREE.Group();
     
@@ -300,6 +331,11 @@ for(let i = 0; i < numSegments; i++) {
     const pos = new THREE.Vector3(0, 0, -i * segmentLength);
     trackSegments.push(createTrackSegment(pos));
 }
+
+// Add start and finish lines
+startLine = createLine(0, 'START');
+finishLine = createLine(-segmentLength * (numSegments - 1), 'FINISH');
+finishLine.visible = false;
 
 // Create simple billboards
 const billboards = [];
@@ -648,6 +684,8 @@ for(let i = -40; i > -200; i -= 40) {
 // Game loop
 let speed = 0.2;
 let score = 0;
+let lapDistance = 0;
+const trackLength = segmentLength * numSegments;
 const scoreDiv = document.getElementById('score');
 
 function animate() {
@@ -667,6 +705,16 @@ function animate() {
         segment.position.z += speed;
         if(segment.position.z > 10) {
             segment.position.z = -((numSegments - 1) * segmentLength);
+        }
+    });
+
+    // Move start and finish lines
+    [startLine, finishLine].forEach(line => {
+        if (line) {
+            line.position.z += speed;
+            if(line.position.z > 10) {
+                line.position.z = -((numSegments - 1) * segmentLength);
+            }
         }
     });
     
@@ -857,20 +905,27 @@ function animate() {
         document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
     }
 
-    // Level progression
-    if (score >= level * levelThreshold && level < maxLevel) {
-        level++;
-        levelDiv.textContent = `Level: ${level}/${maxLevel}`;
-        alert('Level ' + level);
-    }
-    if (score >= levelThreshold * maxLevel && !gameWon) {
-        gameWon = true;
-        if (score > highScore) {
-            highScore = score;
-            localStorage.setItem('f1RacerHighScore', highScore);
+    // Lap and level progression
+    lapDistance += speed;
+    if (lapDistance >= trackLength) {
+        lapDistance -= trackLength;
+        if (level < maxLevel) {
+            level++;
+            levelDiv.textContent = `Level: ${level}/${maxLevel}`;
+            if (level === maxLevel) {
+                finishLine.visible = true;
+            } else {
+                alert('Level ' + level);
+            }
+        } else if (!gameWon) {
+            gameWon = true;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('f1RacerHighScore', highScore);
+            }
+            alert('You win! Final Score: ' + Math.floor(score));
+            window.location.reload();
         }
-        alert('You win! Final Score: ' + Math.floor(score));
-        window.location.reload();
     }
     
     camera.position.set(carBody.position.x, 4, carBody.position.z+5);
