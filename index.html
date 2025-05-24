@@ -660,16 +660,21 @@ scene.add(cityScape);
 
 // Controls
 let moveLeft = false, moveRight = false;
+let accelerate = false, decelerate = false;
 let useTiltControls = false;
 
 // Keyboard controls
 window.addEventListener('keydown', e => {
     if(e.code === 'ArrowLeft') moveLeft = true;
     if(e.code === 'ArrowRight') moveRight = true;
+    if(e.code === 'ArrowUp') accelerate = true;
+    if(e.code === 'ArrowDown') decelerate = true;
 });
 window.addEventListener('keyup', e => {
     if(e.code === 'ArrowLeft') moveLeft = false;
     if(e.code === 'ArrowRight') moveRight = false;
+    if(e.code === 'ArrowUp') accelerate = false;
+    if(e.code === 'ArrowDown') decelerate = false;
 });
 
 // Touch controls
@@ -812,6 +817,13 @@ function startLightSequence() {
 
 function animate() {
     requestAnimationFrame(animate);
+
+    // Apply manual acceleration/deceleration
+    const accelStep = 0.01;
+    const brakeStep = 0.02;
+    const maxSpeed = 3;
+    if (accelerate) speed = Math.min(speed + accelStep, maxSpeed);
+    if (decelerate) speed = Math.max(speed - brakeStep, 0);
     
     // Move car
     if(moveLeft) carBody.position.x = Math.max(carBody.position.x-0.2, -8);
