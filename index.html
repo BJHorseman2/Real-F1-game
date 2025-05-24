@@ -208,7 +208,9 @@ wheelPositions.forEach(pos => {
     carBody.add(wheel);
 });
 
-carBody.position.y = 0.3;
+// Position the car slightly behind the start line so it doesn't move
+// ahead before the race actually begins
+carBody.position.set(0, 0.3, 2);
 scene.add(carBody);
 
 // -------------------- AI Cars --------------------
