@@ -12,6 +12,7 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 #lap { position:fixed; top:40px; left:10px; color:#00ffff; font: bold 20px 'Arial', sans-serif; pointer-events:none;}
 #controls { position:fixed; bottom:10px; left:0; right:0; text-align:center; color:#ffffff; font: bold 16px 'Arial', sans-serif; pointer-events:none;}
 #tiltToggle { position:fixed; bottom:40px; right:10px; background: rgba(255,255,255,0.2); color:#ffffff; padding:10px; border-radius:5px; font: bold 16px 'Arial', sans-serif; border:none; cursor:pointer;}
+#countdown { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:#ffffff; font: bold 80px 'Arial', sans-serif; pointer-events:none;}
 </style>
 </head>
 <body>
@@ -21,6 +22,7 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 <div id="powerup">Power-up Active!</div>
 <div id="controls">Tap left/right sides to steer<br>or use tilt controls</div>
 <button id="tiltToggle">Toggle Tilt Controls</button>
+<div id="countdown"></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
 <script>
 // Load and store high score
@@ -54,6 +56,11 @@ function createSound(type) {
             oscillator.frequency.linearRampToValueAtTime(110, audioContext.currentTime + 0.3);
             gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
             gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+            break;
+        case 'beep':
+            oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
             break;
         case 'engine':
             oscillator.frequency.setValueAtTime(100, audioContext.currentTime);
@@ -683,11 +690,31 @@ for(let i = -40; i > -200; i -= 40) {
 }
 
 // Game loop
-let speed = 0.2;
+let speed = 0;
+const startSpeed = 0.2;
 let score = 0;
 let lapDistance = 0;
 const trackLength = segmentLength * numSegments;
 const scoreDiv = document.getElementById('score');
+const countdownDiv = document.getElementById('countdown');
+
+function startCountdown() {
+    let count = 3;
+    const show = () => {
+        countdownDiv.textContent = count > 0 ? count : 'GO!';
+        const beep = createSound('beep');
+        beep.oscillator.start();
+        beep.oscillator.stop(audioContext.currentTime + 0.2);
+        if (count === 0) {
+            setTimeout(() => { countdownDiv.style.display = 'none'; }, 500);
+            speed = startSpeed;
+        }
+        if (count-- >= 0) {
+            setTimeout(show, 1000);
+        }
+    };
+    show();
+}
 
 function animate() {
     requestAnimationFrame(animate);
@@ -938,6 +965,7 @@ function animate() {
 }
 
 animate();
+startCountdown();
 </script>
 </body>
 </html>
