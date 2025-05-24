@@ -198,7 +198,8 @@
             );
             
             billboard.position.copy(position);
-            billboard.rotation.y = rotation;
+            const tilt = Math.PI / 5; // face player a bit more
+            billboard.rotation.y = rotation + (rotation > 0 ? -tilt : tilt);
             
             scene.add(billboard);
             billboards.push(billboard);

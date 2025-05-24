@@ -191,10 +191,17 @@ const aiCars = [];
 function createAICar(z) {
     const lanes = [-6, -2, 2, 6];
     const aiCar = carBody.clone(true);
+    const color = new THREE.Color();
+    let hue = Math.random();
+    // Avoid hues close to the player's yellow color (roughly 0.16)
+    if (Math.abs(hue - 0.16) < 0.08) {
+        hue = (hue + 0.5) % 1;
+    }
+    color.setHSL(hue, 0.7, 0.5);
     aiCar.traverse(obj => {
         if (obj.material) obj.material = obj.material.clone();
         if (obj.material && obj.material.color) {
-            obj.material.color.setHSL(Math.random(), 0.7, 0.5);
+            obj.material.color.copy(color);
         }
     });
     const startLane = lanes[Math.floor(Math.random() * lanes.length)];
@@ -331,10 +338,11 @@ function createBillboard(position, rotation = 0, color = 0x00ffff, adText = '') 
     billboard.position.copy(position);
     
     // Adjust rotation to face more toward the player/track center
+    const tilt = Math.PI / 5; // Tilt more toward the player
     if (rotation > 0) { // Left side
-        billboard.rotation.y = Math.PI/2 - Math.PI/8; // Angled toward track center
+        billboard.rotation.y = Math.PI/2 - tilt;
     } else { // Right side
-        billboard.rotation.y = -Math.PI/2 + Math.PI/8; // Angled toward track center
+        billboard.rotation.y = -Math.PI/2 + tilt;
     }
     
     // Add to scene and tracking array
