@@ -710,6 +710,7 @@ const trackLength = segmentLength * numSegments;
 const scoreDiv = document.getElementById('score');
 const countdownDiv = document.getElementById('countdown');
 const lights = document.querySelectorAll('#startLights .light');
+let raceStarted = false;
 
 function startLightSequence() {
     let index = 0;
@@ -730,6 +731,7 @@ function startLightSequence() {
                 countdownDiv.textContent = 'GO!';
                 countdownDiv.style.display = 'block';
                 speed = startSpeed;
+                raceStarted = true;
                 setTimeout(() => { countdownDiv.style.display = 'none'; }, 500);
             }, 300);
         }
@@ -933,49 +935,54 @@ function animate() {
         }
     });
     
-    // Update score and speed based on power-ups
-    const baseScoreIncrease = speed * 10;
-    const baseSpeedIncrease = 0.0003; // slower ramp up
-    
-    if (activePowerUp === 'speed') {
-        score += baseScoreIncrease * 2;
-        speed += baseSpeedIncrease * 2;
-    } else if (activePowerUp === 'slowmo') {
-        score += baseScoreIncrease * 0.5;
-        speed += baseSpeedIncrease * 0.5;
-    } else {
-        score += baseScoreIncrease;
-        speed += baseSpeedIncrease;
-    }
-    
-    scoreDiv.textContent = Math.floor(score);
-    if (score > highScore) {
-        highScore = score;
-        document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
-        // Persist the new high score immediately for continuity
-        localStorage.setItem('f1RacerHighScore', highScore);
+    // Update score and speed only after the race starts
+    if (raceStarted) {
+        const baseScoreIncrease = speed * 10;
+        const baseSpeedIncrease = 0.0003; // slower ramp up
+
+        if (activePowerUp === 'speed') {
+            score += baseScoreIncrease * 2;
+            speed += baseSpeedIncrease * 2;
+        } else if (activePowerUp === 'slowmo') {
+            score += baseScoreIncrease * 0.5;
+            speed += baseSpeedIncrease * 0.5;
+        } else {
+            score += baseScoreIncrease;
+            speed += baseSpeedIncrease;
+        }
+
+        if (score > highScore) {
+            highScore = score;
+            document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
+            // Persist the new high score immediately for continuity
+            localStorage.setItem('f1RacerHighScore', highScore);
+        }
     }
 
-    // Lap progression
-    lapDistance += speed;
-    if (lapDistance >= trackLength) {
-        lapDistance -= trackLength;
-        if (lap < totalLaps) {
-            lap++;
-            lapDiv.textContent = `Lap: ${lap}/${totalLaps}`;
-            if (lap === totalLaps) {
-                finishLine.visible = true;
-            } else {
-                alert('Lap ' + (lap - 1) + ' complete!');
+    scoreDiv.textContent = Math.floor(score);
+
+    // Lap progression only after the race starts
+    if (raceStarted) {
+        lapDistance += speed;
+        if (lapDistance >= trackLength) {
+            lapDistance -= trackLength;
+            if (lap < totalLaps) {
+                lap++;
+                lapDiv.textContent = `Lap: ${lap}/${totalLaps}`;
+                if (lap === totalLaps) {
+                    finishLine.visible = true;
+                } else {
+                    alert('Lap ' + (lap - 1) + ' complete!');
+                }
+            } else if (!gameWon) {
+                gameWon = true;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('f1RacerHighScore', highScore);
+                }
+                alert('You won the race! Final Score: ' + Math.floor(score));
+                window.location.reload();
             }
-        } else if (!gameWon) {
-            gameWon = true;
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('f1RacerHighScore', highScore);
-            }
-            alert('You won the race! Final Score: ' + Math.floor(score));
-            window.location.reload();
         }
     }
     
