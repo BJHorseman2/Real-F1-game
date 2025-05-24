@@ -492,9 +492,8 @@ function createGantryBillboard(z, color = 0xff6600, adText = '') {
         context.fillStyle = '#' + color.toString(16).padStart(6, '0');
         context.fillRect(0, 0, canvas.width, canvas.height);
         context.fillStyle = '#ffffff';
-        // Make the printed text on the gantry slightly smaller for better
-        // readability and to avoid overflowing the sign
-        context.font = 'bold 40px Arial';
+        // Smaller crisp lettering for the gantry billboard
+        context.font = 'bold 30px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillText(adText, canvas.width/2, canvas.height/2);
@@ -530,7 +529,7 @@ createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -160), -Math.PI/2, 0xff00
 createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -200), -Math.PI/2, 0x00ffff, 'LAP');        // Cyan
 
 // Overhead gantry billboard spanning the track
-createGantryBillboard(-90, 0xff6600, 'Introducing Mint Condition™');
+createGantryBillboard(-90, 0xadd8e6, 'Introducing Mint Condition™');
 
 // Motion particles
 const particleCount = 200;
