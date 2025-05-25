@@ -939,6 +939,7 @@ const scoreDiv = document.getElementById('score');
 const countdownDiv = document.getElementById('countdown');
 const lights = document.querySelectorAll('#startLights .light');
 let raceStarted = false;
+let lastTime = 0;
 
 function startLightSequence() {
     let index = 0;
@@ -969,27 +970,30 @@ function startLightSequence() {
 
 function animate(time) {
     requestAnimationFrame(animate);
+    const delta = lastTime ? (time - lastTime) / 16.6667 : 1;
+    lastTime = time;
     updateBuildingLights(time);
 
     // Apply manual acceleration/deceleration
     const accelStep = 0.02;
     const brakeStep = 0.04;
     const maxSpeed = 3;
-    if (accelerate) speed = Math.min(speed + accelStep, maxSpeed);
-    if (decelerate) speed = Math.max(speed - brakeStep, 0);
+    if (accelerate) speed = Math.min(speed + accelStep * delta, maxSpeed);
+    if (decelerate) speed = Math.max(speed - brakeStep * delta, 0);
     
     // Move car
-    if(moveLeft) carBody.position.x = Math.max(carBody.position.x-0.4, -8);
-    if(moveRight) carBody.position.x = Math.min(carBody.position.x+0.4, 8);
+    const lateralStep = 0.4 * delta;
+    if(moveLeft) carBody.position.x = Math.max(carBody.position.x - lateralStep, -8);
+    if(moveRight) carBody.position.x = Math.min(carBody.position.x + lateralStep, 8);
     
     // Rotate wheels
     wheels.forEach(wheel => {
-        wheel.rotation.x += speed * 0.5;
+        wheel.rotation.x += speed * 0.5 * delta;
     });
     
     // Move track segments
     trackSegments.forEach(segment => {
-        segment.position.z += speed;
+        segment.position.z += speed * delta;
         if(segment.position.z > 10) {
             segment.position.z = -((numSegments - 1) * segmentLength);
         }
@@ -998,7 +1002,7 @@ function animate(time) {
     // Move start and finish lines
     [startLine, finishLine].forEach(line => {
         if (line) {
-            line.position.z += speed;
+            line.position.z += speed * delta;
             if(line.position.z > 10) {
                 line.position.z = -((numSegments - 1) * segmentLength);
             }
@@ -1007,7 +1011,7 @@ function animate(time) {
     
     // Update particles
     particles.children.forEach(particle => {
-        particle.position.z += particle.userData.speed + speed;
+        particle.position.z += (particle.userData.speed + speed) * delta;
         if(particle.position.z > 5) {
             particle.position.z = -200;
             particle.position.x = (Math.random() - 0.5) * trackWidth;
@@ -1019,8 +1023,8 @@ function animate(time) {
     // Move and check power-ups
     powerUps.forEach(powerUp => {
         if (!powerUp.userData.collected) {
-            powerUp.position.z += speed;
-            powerUp.rotation.y += 0.02;
+            powerUp.position.z += speed * delta;
+            powerUp.rotation.y += 0.02 * delta;
             
             // Check collection
             if(Math.abs(powerUp.position.z-carBody.position.z) < 1 && 
@@ -1053,7 +1057,7 @@ function animate(time) {
     
     // Update power-up effects
     if (activePowerUp) {
-        powerUpDuration--;
+        powerUpDuration -= delta;
         if (powerUpDuration <= 0) {
             document.getElementById('powerup').style.opacity = '0';
             activePowerUp = null;
@@ -1063,7 +1067,7 @@ function animate(time) {
     // Animate billboards - basic implementation
     billboards.forEach(billboard => {
         // Move with track
-        billboard.position.z += speed;
+        billboard.position.z += speed * delta;
 
         // Reset position when passed
         if(billboard.position.z > 20) {
@@ -1073,7 +1077,7 @@ function animate(time) {
 
     // Parallax movement for distant cityscape
     cityScape.children.forEach(building => {
-        building.position.z += speed * 0.5;
+        building.position.z += speed * 0.5 * delta;
         if (building.position.z > 50) {
             building.position.z -= cityLength;
         }
@@ -1083,10 +1087,10 @@ function animate(time) {
     const difficultyFactor = Math.min(2, 1 + score/20000); // More gradual
     
     obstacles.forEach(obj => {
-        obj.position.z += speed;
+        obj.position.z += speed * delta;
         
         // Add horizontal movement with increased speed based on difficulty
-        obj.position.x += obj.userData.moveDirection * obj.userData.moveSpeed * difficultyFactor;
+        obj.position.x += obj.userData.moveDirection * obj.userData.moveSpeed * difficultyFactor * delta;
         
         if (obj.position.x <= -8 || obj.position.x >= 8) {
             obj.userData.moveDirection *= -1;
@@ -1124,14 +1128,14 @@ function animate(time) {
     aiCars.forEach(ai => {
         if (!raceStarted) return; // keep them on the grid until the start
 
-        ai.position.z += speed + ai.userData.speed;
+        ai.position.z += (speed + ai.userData.speed) * delta;
 
         // Slight speed variation
         ai.userData.speed += (Math.random() - 0.5) * 0.001;
         ai.userData.speed = Math.min(Math.max(ai.userData.speed, 0.03), 0.12);
 
         // Decide when to change lanes
-        ai.userData.laneChangeTimer--;
+        ai.userData.laneChangeTimer -= delta;
         if (ai.userData.laneChangeTimer <= 0) {
             const lanes = [-6, -2, 2, 6];
             ai.userData.targetLane = lanes[Math.floor(Math.random() * lanes.length)];
@@ -1140,7 +1144,7 @@ function animate(time) {
 
         // Smoothly move toward target lane
         const dx = ai.userData.targetLane - ai.position.x;
-        const step = Math.sign(dx) * Math.min(Math.abs(dx), ai.userData.laneChangeSpeed);
+        const step = Math.sign(dx) * Math.min(Math.abs(dx), ai.userData.laneChangeSpeed * delta);
         ai.position.x += step;
 
         if (Math.abs(dx) < 0.05) {
@@ -1183,8 +1187,8 @@ function animate(time) {
     
     // Update score and speed only after the race starts
     if (raceStarted) {
-        const baseScoreIncrease = speed * 10;
-        const baseSpeedIncrease = 0.0003; // slower ramp up
+        const baseScoreIncrease = speed * 10 * delta;
+        const baseSpeedIncrease = 0.0003 * delta; // slower ramp up
 
         if (activePowerUp === 'speed') {
             score += baseScoreIncrease * 2;
@@ -1209,7 +1213,7 @@ function animate(time) {
 
     // Lap progression only after the race starts
     if (raceStarted) {
-        lapDistance += speed;
+        lapDistance += speed * delta;
         if (lapDistance >= trackLength) {
             lapDistance -= trackLength;
             if (lap < totalLaps) {

@@ -84,6 +84,7 @@
         let moveLeft = false, moveRight = false;
         let accelerate = false, decelerate = false;
         let speed = 0.2;
+        let lastTime = 0;
 
         // Track configuration
         const trackWidth = 16;
@@ -211,25 +212,29 @@
         }
 
         // Animation loop
-        function animate() {
+        function animate(time) {
             requestAnimationFrame(animate);
 
             if (!gameStarted || gameOver) return;
 
-            if (accelerate) speed = Math.min(speed + 0.02, 3);
-            if (decelerate) speed = Math.max(speed - 0.04, 0);
+            const delta = lastTime ? (time - lastTime) / 16.6667 : 1;
+            lastTime = time;
+
+            if (accelerate) speed = Math.min(speed + 0.02 * delta, 3);
+            if (decelerate) speed = Math.max(speed - 0.04 * delta, 0);
 
             // Update score
-            score += speed;
+            score += speed * delta;
             document.getElementById('score').textContent = Math.floor(score);
             
             // Move car left/right
-            if(moveLeft) carBody.position.x = Math.max(carBody.position.x-0.4, -trackWidth/2+1);
-            if(moveRight) carBody.position.x = Math.min(carBody.position.x+0.4, trackWidth/2-1);
+            const lateralStep = 0.4 * delta;
+            if(moveLeft) carBody.position.x = Math.max(carBody.position.x - lateralStep, -trackWidth/2+1);
+            if(moveRight) carBody.position.x = Math.min(carBody.position.x + lateralStep, trackWidth/2-1);
             
             // Move track segments
             trackSegments.forEach(segment => {
-                segment.position.z += speed;
+                segment.position.z += speed * delta;
                 if(segment.position.z > 10) {
                     segment.position.z = -((numSegments - 1) * segmentLength);
                 }
@@ -237,14 +242,14 @@
             
             // Move billboards
             billboards.forEach(billboard => {
-                billboard.position.z += speed;
+                billboard.position.z += speed * delta;
                 if(billboard.position.z > 20) {
                     billboard.position.z -= 200;
                 }
             });
             
             // Slowly increase speed
-            speed += 0.0001;
+            speed += 0.0001 * delta;
             
             // Render scene
             renderer.render(scene, camera);
