@@ -688,6 +688,13 @@ function createBuilding(x, z) {
     const building = new THREE.Mesh(geometry, material);
     building.position.set(x, height / 2, z);
 
+    // Add subtle light to give the building a glow
+    const glowColor = baseColor.clone().offsetHSL(0, 0, 0.2);
+    const buildingLight = new THREE.PointLight(glowColor, 0.3, 20);
+    buildingLight.position.y = height * 0.8;
+    building.add(buildingLight);
+    building.userData.light = buildingLight;
+
     // Add simple rooftop structure
     const roofHeight = 0.3 + Math.random() * 0.2;
     const roofGeo = new THREE.BoxGeometry(width * 0.6, roofHeight, depth * 0.6);
@@ -771,6 +778,9 @@ function updateBuildingLights(time) {
             }
             b.userData.lastFlicker = time;
             b.userData.flickerInterval = 500 + Math.random() * 1500;
+        }
+        if (b.userData.light) {
+            b.userData.light.intensity = 0.2 + 0.1 * Math.sin(time * 0.002 + b.position.x);
         }
     });
 }
