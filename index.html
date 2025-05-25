@@ -671,8 +671,11 @@ function createBuilding(x, z) {
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const { texture, canvas, ctx } = createBuildingTexture(height);
 
-    // Slightly vary color tone for more realism
-    const baseColor = new THREE.Color().setHSL(0.55 + Math.random() * 0.1, 0.2, 0.3 + Math.random() * 0.1);
+    // Vary building colors across the full hue range for a more vibrant city
+    const baseHue = Math.random();
+    const baseSaturation = 0.2 + Math.random() * 0.3;
+    const baseLightness = 0.3 + Math.random() * 0.2;
+    const baseColor = new THREE.Color().setHSL(baseHue, baseSaturation, baseLightness);
     const material = new THREE.MeshStandardMaterial({
         map: texture,
         color: baseColor,
@@ -696,6 +699,24 @@ function createBuilding(x, z) {
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.position.y = height / 2 + roofHeight / 2;
     building.add(roof);
+
+    // Additional rooftop details
+    const hvacGeo = new THREE.BoxGeometry(width * 0.3, 0.2, depth * 0.3);
+    const hvac = new THREE.Mesh(hvacGeo, roofMat.clone());
+    hvac.position.set((Math.random() - 0.5) * width * 0.4,
+                      height / 2 + roofHeight + 0.1,
+                      (Math.random() - 0.5) * depth * 0.4);
+    building.add(hvac);
+
+    if (Math.random() > 0.7) {
+        const towerGeo = new THREE.CylinderGeometry(width * 0.15, width * 0.15, 0.8, 12);
+        const towerMat = new THREE.MeshStandardMaterial({ color: 0x666666, roughness: 0.5, metalness: 0.3 });
+        const tower = new THREE.Mesh(towerGeo, towerMat);
+        tower.position.set((Math.random() - 0.5) * width * 0.4,
+                           height / 2 + roofHeight + 0.5,
+                           (Math.random() - 0.5) * depth * 0.4);
+        building.add(tower);
+    }
 
     // Occasional antenna for extra detail
     if (Math.random() > 0.5) {
