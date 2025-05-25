@@ -88,6 +88,7 @@ scene.fog = new THREE.Fog(0x000000, 10, 200);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 document.body.appendChild(renderer.domElement);
 
 // F1 car
@@ -748,7 +749,8 @@ function createBuilding(x, z) {
 
 // Keep buildings away from the racing surface
 const buildingMargin = 10; // distance from the edge of the track
-for (let i = 0; i < 80; i++) {
+// Reduced building count to lighten rendering load
+for (let i = 0; i < 50; i++) {
     const side = Math.random() < 0.5 ? -1 : 1;
     const offset = (trackWidth / 2) + buildingMargin + Math.random() * 20;
     const x = side * offset;
