@@ -972,15 +972,15 @@ function animate(time) {
     updateBuildingLights(time);
 
     // Apply manual acceleration/deceleration
-    const accelStep = 0.01;
-    const brakeStep = 0.02;
+    const accelStep = 0.02;
+    const brakeStep = 0.04;
     const maxSpeed = 3;
     if (accelerate) speed = Math.min(speed + accelStep, maxSpeed);
     if (decelerate) speed = Math.max(speed - brakeStep, 0);
     
     // Move car
-    if(moveLeft) carBody.position.x = Math.max(carBody.position.x-0.2, -8);
-    if(moveRight) carBody.position.x = Math.min(carBody.position.x+0.2, 8);
+    if(moveLeft) carBody.position.x = Math.max(carBody.position.x-0.4, -8);
+    if(moveRight) carBody.position.x = Math.min(carBody.position.x+0.4, 8);
     
     // Rotate wheels
     wheels.forEach(wheel => {
