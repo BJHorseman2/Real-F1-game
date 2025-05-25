@@ -90,6 +90,8 @@ const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 document.body.appendChild(renderer.domElement);
+// Ensure the window has focus for keyboard events
+window.focus();
 
 // F1 car
 const carBody = new THREE.Group();
@@ -793,18 +795,39 @@ let accelerate = false, decelerate = false;
 let useTiltControls = false;
 
 // Keyboard controls
-window.addEventListener('keydown', e => {
-    if(e.code === 'ArrowLeft' || e.code === 'KeyA') moveLeft = true;
-    if(e.code === 'ArrowRight' || e.code === 'KeyD') moveRight = true;
-    if(e.code === 'ArrowUp' || e.code === 'KeyW') accelerate = true;
-    if(e.code === 'ArrowDown' || e.code === 'KeyS') decelerate = true;
-});
-window.addEventListener('keyup', e => {
-    if(e.code === 'ArrowLeft' || e.code === 'KeyA') moveLeft = false;
-    if(e.code === 'ArrowRight' || e.code === 'KeyD') moveRight = false;
-    if(e.code === 'ArrowUp' || e.code === 'KeyW') accelerate = false;
-    if(e.code === 'ArrowDown' || e.code === 'KeyS') decelerate = false;
-});
+function handleKey(e, pressed) {
+    const code = e.code || '';
+    const key = (e.key || '').toLowerCase();
+
+    switch (code) {
+        case 'ArrowLeft':
+        case 'KeyA':
+            moveLeft = pressed;
+            break;
+        case 'ArrowRight':
+        case 'KeyD':
+            moveRight = pressed;
+            break;
+        case 'ArrowUp':
+        case 'KeyW':
+            accelerate = pressed;
+            break;
+        case 'ArrowDown':
+        case 'KeyS':
+            decelerate = pressed;
+            break;
+        default:
+            if (key === 'a') moveLeft = pressed;
+            else if (key === 'd') moveRight = pressed;
+            else if (key === 'w') accelerate = pressed;
+            else if (key === 's') decelerate = pressed;
+            else return;
+    }
+    e.preventDefault();
+}
+
+window.addEventListener('keydown', e => handleKey(e, true));
+window.addEventListener('keyup', e => handleKey(e, false));
 
 // Touch controls
 const handleTouch = (e) => {
