@@ -86,9 +86,11 @@ function createSound(type) {
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x000000, 10, 200);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({antialias: true});
+// Disable antialiasing and limit pixel ratio for better performance on
+// low powered devices
+const renderer = new THREE.WebGLRenderer({antialias: false});
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setPixelRatio(1);
 document.body.appendChild(renderer.domElement);
 // Ensure the window has focus for keyboard events
 window.focus();
@@ -536,29 +538,28 @@ createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -200), -Math.PI/2, 0x00ff
 // Use a darker color for better contrast on the gantry billboard
 createGantryBillboard(-90, 0x003366, 'Introducing Mint Condition™');
 
-// Motion particles
+// Motion particles - use a single Points object to reduce draw calls
 const particleCount = 200;
-const particles = new THREE.Group();
-const particleGeometry = new THREE.SphereGeometry(0.05, 4, 4);
-const particleMaterial = new THREE.MeshBasicMaterial({
+const particleGeometry = new THREE.BufferGeometry();
+const positions = new Float32Array(particleCount * 3);
+const speeds = new Float32Array(particleCount);
+
+for(let i = 0; i < particleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * trackWidth;
+    positions[i * 3 + 1] = Math.random() * 5;
+    positions[i * 3 + 2] = -(Math.random() * 200);
+    speeds[i] = 0.2 + Math.random() * 0.3;
+}
+
+particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+const particleMaterial = new THREE.PointsMaterial({
     color: 0xffffff,
+    size: 0.1,
     transparent: true,
     opacity: 0.4
 });
-
-for(let i = 0; i < particleCount; i++) {
-    const particle = new THREE.Mesh(particleGeometry, particleMaterial.clone());
-    particle.position.set(
-        (Math.random() - 0.5) * trackWidth,
-        Math.random() * 5,
-        -(Math.random() * 200)
-    );
-    particle.userData = {
-        speed: 0.2 + Math.random() * 0.3,
-        originalY: particle.position.y
-    };
-    particles.add(particle);
-}
+const particles = new THREE.Points(particleGeometry, particleMaterial);
+particles.userData.speeds = speeds;
 scene.add(particles);
 
 // Barriers and obstacles
@@ -898,6 +899,7 @@ window.addEventListener('orientationchange', () => {
     camera.aspect = window.innerWidth/window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(1);
 });
 
 // Power-ups
@@ -1010,15 +1012,17 @@ function animate(time) {
     });
     
     // Update particles
-    particles.children.forEach(particle => {
-        particle.position.z += (particle.userData.speed + speed) * delta;
-        if(particle.position.z > 5) {
-            particle.position.z = -200;
-            particle.position.x = (Math.random() - 0.5) * trackWidth;
-            particle.material.opacity = 0.4;
+    const pPositions = particles.geometry.attributes.position.array;
+    for (let i = 0; i < particleCount; i++) {
+        const idx = i * 3;
+        pPositions[idx + 2] += (particles.userData.speeds[i] + speed) * delta;
+        if (pPositions[idx + 2] > 5) {
+            pPositions[idx + 2] = -200;
+            pPositions[idx] = (Math.random() - 0.5) * trackWidth;
+            particles.userData.speeds[i] = 0.2 + Math.random() * 0.3;
         }
-        particle.material.opacity = Math.max(0, 0.4 * (1 - (particle.position.z + 200) / 205));
-    });
+    }
+    particles.geometry.attributes.position.needsUpdate = true;
     
     // Move and check power-ups
     powerUps.forEach(powerUp => {
