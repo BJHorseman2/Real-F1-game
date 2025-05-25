@@ -252,15 +252,23 @@
         function onKeyDown(event) {
             switch(event.key) {
                 case 'ArrowLeft':
+                case 'a':
+                case 'A':
                     moveLeft = true;
                     break;
                 case 'ArrowRight':
+                case 'd':
+                case 'D':
                     moveRight = true;
                     break;
                 case 'ArrowUp':
+                case 'w':
+                case 'W':
                     accelerate = true;
                     break;
                 case 'ArrowDown':
+                case 's':
+                case 'S':
                     decelerate = true;
                     break;
             }
@@ -269,15 +277,23 @@
         function onKeyUp(event) {
             switch(event.key) {
                 case 'ArrowLeft':
+                case 'a':
+                case 'A':
                     moveLeft = false;
                     break;
                 case 'ArrowRight':
+                case 'd':
+                case 'D':
                     moveRight = false;
                     break;
                 case 'ArrowUp':
+                case 'w':
+                case 'W':
                     accelerate = false;
                     break;
                 case 'ArrowDown':
+                case 's':
+                case 'S':
                     decelerate = false;
                     break;
             }

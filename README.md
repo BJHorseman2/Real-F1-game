@@ -13,7 +13,7 @@ A fast-paced racing game built with Three.js featuring neon aesthetics, obstacle
 
 ## How to Play
 
-- **Desktop**: Use left and right arrow keys or A/D keys to steer
+- **Desktop**: Use left and right arrow keys or A/D keys to steer. Use the Up arrow or **W** to accelerate and the Down arrow or **S** to brake.
 - **Mobile**: Tap left/right sides of the screen or use device tilt
 - Avoid obstacles to keep racing
 - Collect power-ups for advantages
