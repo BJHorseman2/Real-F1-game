@@ -659,7 +659,7 @@ function createBuildingTexture(height) {
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(1, Math.ceil(height / 10));
-    return texture;
+    return { texture, canvas, ctx };
 }
 
 function createBuilding(x, z) {
@@ -667,7 +667,7 @@ function createBuilding(x, z) {
     const depth = 2 + Math.random() * 3;
     const height = 5 + Math.random() * 15;
     const geometry = new THREE.BoxGeometry(width, height, depth);
-    const texture = createBuildingTexture(height);
+    const { texture, canvas, ctx } = createBuildingTexture(height);
     const material = new THREE.MeshStandardMaterial({
         map: texture,
         emissiveMap: texture,
@@ -677,6 +677,11 @@ function createBuilding(x, z) {
     });
     const building = new THREE.Mesh(geometry, material);
     building.position.set(x, height / 2, z);
+    building.userData.canvas = canvas;
+    building.userData.ctx = ctx;
+    building.userData.texture = texture;
+    building.userData.lastFlicker = 0;
+    building.userData.flickerInterval = 500 + Math.random() * 1500;
     cityScape.add(building);
 }
 
@@ -690,6 +695,31 @@ for (let i = 0; i < 80; i++) {
     createBuilding(x, z);
 }
 scene.add(cityScape);
+
+function updateBuildingLights(time) {
+    cityScape.children.forEach(b => {
+        if (time - b.userData.lastFlicker > b.userData.flickerInterval) {
+            const ctx = b.userData.ctx;
+            if (ctx) {
+                const rows = 8;
+                const cols = 4;
+                const winW = 6;
+                const winH = 8;
+                const padX = 4;
+                const padY = 4;
+                for (let i = 0; i < 2; i++) {
+                    const x = Math.floor(Math.random() * cols);
+                    const y = Math.floor(Math.random() * rows);
+                    ctx.fillStyle = Math.random() > 0.5 ? '#ffe066' : '#444';
+                    ctx.fillRect(padX + x * (winW + padX), padY + y * (winH + padY), winW, winH);
+                }
+                b.userData.texture.needsUpdate = true;
+            }
+            b.userData.lastFlicker = time;
+            b.userData.flickerInterval = 500 + Math.random() * 1500;
+        }
+    });
+}
 
 // Controls
 let moveLeft = false, moveRight = false;
@@ -848,8 +878,9 @@ function startLightSequence() {
     show();
 }
 
-function animate() {
+function animate(time) {
     requestAnimationFrame(animate);
+    updateBuildingLights(time);
 
     // Apply manual acceleration/deceleration
     const accelStep = 0.01;
@@ -1118,7 +1149,7 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-animate();
+requestAnimationFrame(animate);
 startLightSequence();
 </script>
 </body>
