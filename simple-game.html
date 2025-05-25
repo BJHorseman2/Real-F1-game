@@ -216,16 +216,16 @@
 
             if (!gameStarted || gameOver) return;
 
-            if (accelerate) speed = Math.min(speed + 0.01, 3);
-            if (decelerate) speed = Math.max(speed - 0.02, 0);
+            if (accelerate) speed = Math.min(speed + 0.02, 3);
+            if (decelerate) speed = Math.max(speed - 0.04, 0);
 
             // Update score
             score += speed;
             document.getElementById('score').textContent = Math.floor(score);
             
             // Move car left/right
-            if(moveLeft) carBody.position.x = Math.max(carBody.position.x-0.2, -trackWidth/2+1);
-            if(moveRight) carBody.position.x = Math.min(carBody.position.x+0.2, trackWidth/2-1);
+            if(moveLeft) carBody.position.x = Math.max(carBody.position.x-0.4, -trackWidth/2+1);
+            if(moveRight) carBody.position.x = Math.min(carBody.position.x+0.4, trackWidth/2-1);
             
             // Move track segments
             trackSegments.forEach(segment => {
