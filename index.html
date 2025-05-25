@@ -632,16 +632,48 @@ for(let z = 0; z > -180; z -= 40) {
 const cityScape = new THREE.Group();
 const cityLength = (segmentLength * numSegments) + 200; // extend city along track
 
+function createBuildingTexture(height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const rows = 8;
+    const cols = 4;
+    const winW = 6;
+    const winH = 8;
+    const padX = 4;
+    const padY = 4;
+
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            ctx.fillStyle = Math.random() > 0.5 ? '#ffe066' : '#444';
+            ctx.fillRect(padX + x * (winW + padX), padY + y * (winH + padY), winW, winH);
+        }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1, Math.ceil(height / 10));
+    return texture;
+}
+
 function createBuilding(x, z) {
     const width = 2 + Math.random() * 3;
     const depth = 2 + Math.random() * 3;
     const height = 5 + Math.random() * 15;
     const geometry = new THREE.BoxGeometry(width, height, depth);
+    const texture = createBuildingTexture(height);
     const material = new THREE.MeshStandardMaterial({
-        color: 0x222222,
-        emissive: 0x333333,
-        roughness: 0.6,
-        metalness: 0.3
+        map: texture,
+        emissiveMap: texture,
+        emissiveIntensity: 0.8,
+        roughness: 0.8,
+        metalness: 0.2
     });
     const building = new THREE.Mesh(geometry, material);
     building.position.set(x, height / 2, z);
