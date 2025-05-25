@@ -630,6 +630,7 @@ for(let z = 0; z > -180; z -= 40) {
 
 // -------------------- Cityscape --------------------
 const cityScape = new THREE.Group();
+const cityLength = (segmentLength * numSegments) + 200; // extend city along track
 
 function createBuilding(x, z) {
     const width = 2 + Math.random() * 3;
@@ -649,11 +650,11 @@ function createBuilding(x, z) {
 
 // Keep buildings away from the racing surface
 const buildingMargin = 10; // distance from the edge of the track
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < 80; i++) {
     const side = Math.random() < 0.5 ? -1 : 1;
     const offset = (trackWidth / 2) + buildingMargin + Math.random() * 20;
     const x = side * offset;
-    const z = -250 - Math.random() * 50;
+    const z = -Math.random() * cityLength;
     createBuilding(x, z);
 }
 scene.add(cityScape);
@@ -922,7 +923,7 @@ function animate() {
     cityScape.children.forEach(building => {
         building.position.z += speed * 0.5;
         if (building.position.z > 50) {
-            building.position.z -= 300;
+            building.position.z -= cityLength;
         }
     });
     
