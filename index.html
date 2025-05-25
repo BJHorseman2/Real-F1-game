@@ -796,14 +796,14 @@ let useTiltControls = false;
 window.addEventListener('keydown', e => {
     if(e.code === 'ArrowLeft') moveLeft = true;
     if(e.code === 'ArrowRight') moveRight = true;
-    if(e.code === 'ArrowUp') accelerate = true;
-    if(e.code === 'ArrowDown') decelerate = true;
+    if(e.code === 'ArrowUp' || e.code === 'KeyW') accelerate = true;
+    if(e.code === 'ArrowDown' || e.code === 'KeyS') decelerate = true;
 });
 window.addEventListener('keyup', e => {
     if(e.code === 'ArrowLeft') moveLeft = false;
     if(e.code === 'ArrowRight') moveRight = false;
-    if(e.code === 'ArrowUp') accelerate = false;
-    if(e.code === 'ArrowDown') decelerate = false;
+    if(e.code === 'ArrowUp' || e.code === 'KeyW') accelerate = false;
+    if(e.code === 'ArrowDown' || e.code === 'KeyS') decelerate = false;
 });
 
 // Touch controls
