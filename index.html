@@ -666,22 +666,55 @@ function createBuilding(x, z) {
     const width = 2 + Math.random() * 3;
     const depth = 2 + Math.random() * 3;
     const height = 5 + Math.random() * 15;
+
+    // Base building geometry
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const { texture, canvas, ctx } = createBuildingTexture(height);
+
+    // Slightly vary color tone for more realism
+    const baseColor = new THREE.Color().setHSL(0.55 + Math.random() * 0.1, 0.2, 0.3 + Math.random() * 0.1);
     const material = new THREE.MeshStandardMaterial({
         map: texture,
+        color: baseColor,
         emissiveMap: texture,
         emissiveIntensity: 0.8,
         roughness: 0.8,
         metalness: 0.2
     });
+
     const building = new THREE.Mesh(geometry, material);
     building.position.set(x, height / 2, z);
+
+    // Add simple rooftop structure
+    const roofHeight = 0.3 + Math.random() * 0.2;
+    const roofGeo = new THREE.BoxGeometry(width * 0.6, roofHeight, depth * 0.6);
+    const roofMat = new THREE.MeshStandardMaterial({
+        color: baseColor.clone().multiplyScalar(0.8),
+        roughness: 0.6,
+        metalness: 0.3
+    });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.y = height / 2 + roofHeight / 2;
+    building.add(roof);
+
+    // Occasional antenna for extra detail
+    if (Math.random() > 0.5) {
+        const antennaGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
+        const antennaMat = new THREE.MeshStandardMaterial({
+            color: 0xaaaaaa,
+            emissive: 0x333333
+        });
+        const antenna = new THREE.Mesh(antennaGeo, antennaMat);
+        antenna.position.y = height / 2 + roofHeight + 0.5;
+        building.add(antenna);
+    }
+
     building.userData.canvas = canvas;
     building.userData.ctx = ctx;
     building.userData.texture = texture;
     building.userData.lastFlicker = 0;
     building.userData.flickerInterval = 500 + Math.random() * 1500;
+
     cityScape.add(building);
 }
 
