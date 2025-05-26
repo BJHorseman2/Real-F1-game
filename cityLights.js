@@ -21,9 +21,10 @@ const CityLights = (() => {
 
   function update(time) {
     const t = time * 0.002;
-    lights.forEach(l => {
+    for (let i = 0; i < lights.length; i++) {
+      const l = lights[i];
       l.material.opacity = 0.3 + 0.2 * Math.sin(t + l.position.x);
-    });
+    }
   }
 
   return { createLight, update };
