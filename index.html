@@ -16,6 +16,7 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 #startLights { position:fixed; top:40%; left:50%; transform:translateX(-50%); display:flex; gap:15px; }
 #startLights .light { width:40px; height:40px; border-radius:50%; background:#440000; border:2px solid #ffffff; }
 #startLights .light.on { background:#ff0000; }
+#message { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:#ffffff; font:bold 40px 'Arial', sans-serif; pointer-events:none; display:none; }
 </style>
 </head>
 <body>
@@ -33,6 +34,7 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
     <div class="light"></div>
 </div>
 <div id="countdown"></div>
+<div id="message"></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
 <script src="inputManager.js"></script>
 <script src="cityLights.js"></script>
@@ -862,7 +864,7 @@ tiltToggle.addEventListener('click', () => {
                 if (response !== 'granted') {
                     useTiltControls = false;
                     tiltToggle.style.background = 'rgba(255,0,0,0.2)';
-                    alert('Tilt controls require device orientation permission');
+                    showMessage('Tilt controls require device orientation permission');
                 }
             })
             .catch(console.error);
@@ -919,6 +921,7 @@ let lapDistance = 0;
 const trackLength = segmentLength * numSegments;
 const scoreDiv = document.getElementById('score');
 const countdownDiv = document.getElementById('countdown');
+const messageDiv = document.getElementById('message');
 const lights = document.querySelectorAll('#startLights .light');
 let raceStarted = false;
 let lastTime = 0;
@@ -948,6 +951,12 @@ function startLightSequence() {
         }
     };
     show();
+}
+
+function showMessage(text, duration = 1500) {
+    messageDiv.textContent = text;
+    messageDiv.style.display = 'block';
+    setTimeout(() => { messageDiv.style.display = 'none'; }, duration);
 }
 
 function animate(time) {
@@ -1092,8 +1101,8 @@ function animate(time) {
                     localStorage.setItem('f1RacerHighScore', highScore);
                 }
                 
-                alert('Crash! Final Score: ' + Math.floor(score));
-                window.location.reload();
+                showMessage('Crash! Final Score: ' + Math.floor(score));
+                setTimeout(() => window.location.reload(), 1000);
             }
         }
     });
@@ -1153,8 +1162,8 @@ function animate(time) {
                     localStorage.setItem('f1RacerHighScore', highScore);
                 }
 
-                alert('Crash! Final Score: ' + Math.floor(score));
-                window.location.reload();
+                showMessage('Crash! Final Score: ' + Math.floor(score));
+                setTimeout(() => window.location.reload(), 1000);
             }
         }
     });
@@ -1196,7 +1205,7 @@ function animate(time) {
                 if (lap === totalLaps) {
                     finishLine.visible = true;
                 } else {
-                    alert('Lap ' + (lap - 1) + ' complete!');
+                    showMessage('Lap ' + (lap - 1) + ' complete!');
                 }
             } else if (!gameWon) {
                 gameWon = true;
@@ -1204,8 +1213,8 @@ function animate(time) {
                     highScore = score;
                     localStorage.setItem('f1RacerHighScore', highScore);
                 }
-                alert('You won the race! Final Score: ' + Math.floor(score));
-                window.location.reload();
+                showMessage('You won the race! Final Score: ' + Math.floor(score));
+                setTimeout(() => window.location.reload(), 1000);
             }
         }
     }
