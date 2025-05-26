@@ -1200,9 +1200,12 @@ function animate(time) {
         lapDistance += speed * delta;
         if (lapDistance >= trackLength) {
             lapDistance -= trackLength;
-            // Reset start line so the new lap begins at the same point
+            // Reset line positions so each new lap starts cleanly
             if (startLine) {
                 startLine.position.z = 0;
+            }
+            if (finishLine) {
+                finishLine.position.z = -((numSegments - 1) * segmentLength);
             }
             if (lap < totalLaps) {
                 lap++;
