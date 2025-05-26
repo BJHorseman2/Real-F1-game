@@ -34,6 +34,8 @@ body { margin: 0; overflow: hidden; background:#000; touch-action: none;}
 </div>
 <div id="countdown"></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
+<script src="inputManager.js"></script>
+<script src="cityLights.js"></script>
 <script>
 // Load and store high score
 let highScore = localStorage.getItem('f1RacerHighScore') || 0;
@@ -694,8 +696,8 @@ function createBuilding(x, z) {
 
     // Add subtle light to give the building a glow
     const glowColor = baseColor.clone().offsetHSL(0, 0, 0.2);
-    const buildingLight = new THREE.PointLight(glowColor, 0.3, 20);
-    buildingLight.position.y = height * 0.8;
+    const buildingLight = CityLights.createLight(glowColor);
+    buildingLight.position.set(0, height * 0.8, 0);
     building.add(buildingLight);
     building.userData.light = buildingLight;
 
@@ -784,10 +786,8 @@ function updateBuildingLights(time) {
             b.userData.lastFlicker = time;
             b.userData.flickerInterval = 500 + Math.random() * 1500;
         }
-        if (b.userData.light) {
-            b.userData.light.intensity = 0.2 + 0.1 * Math.sin(time * 0.002 + b.position.x);
-        }
     });
+    CityLights.update(time);
 }
 
 // Controls
@@ -810,18 +810,14 @@ function handleKey(e, pressed) {
             moveRight = pressed;
             break;
         case 'ArrowUp':
-        case 'KeyW':
             accelerate = pressed;
             break;
         case 'ArrowDown':
-        case 'KeyS':
             decelerate = pressed;
             break;
         default:
             if (key === 'a') moveLeft = pressed;
             else if (key === 'd') moveRight = pressed;
-            else if (key === 'w') accelerate = pressed;
-            else if (key === 's') decelerate = pressed;
             else return;
     }
     e.preventDefault();
@@ -980,8 +976,10 @@ function animate(time) {
     const accelStep = 0.02;
     const brakeStep = 0.04;
     const maxSpeed = 3;
-    if (accelerate) speed = Math.min(speed + accelStep * delta, maxSpeed);
-    if (decelerate) speed = Math.max(speed - brakeStep * delta, 0);
+    const accel = accelerate || inputManager.accelerate;
+    const decel = decelerate || inputManager.decelerate;
+    if (accel) speed = Math.min(speed + accelStep * delta, maxSpeed);
+    if (decel) speed = Math.max(speed - brakeStep * delta, 0);
     
     // Move car
     const lateralStep = 0.4 * delta;
