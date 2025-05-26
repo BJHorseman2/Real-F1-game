@@ -408,14 +408,20 @@ finishLine.visible = false;
 // Create simple billboards
 const billboards = [];
 
-function createBillboard(position, rotation = 0, color = 0x00ffff, adText = '') {
+function createBillboard(position, rotation = 0, color = 0x00ffff, adText = '', adImage = null) {
     // Enhanced billboard implementation with color options and tilt
     const width = 6;
     const height = 3;
     
-    // Create canvas texture for billboard if ad text is provided
+    // Create canvas texture or load image for the billboard
     let material;
-    if (adText) {
+    if (adImage) {
+        const texture = new THREE.TextureLoader().load(adImage);
+        material = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.DoubleSide
+        });
+    } else if (adText) {
         const canvas = document.createElement('canvas');
         canvas.width = 512;
         canvas.height = 256;
@@ -475,7 +481,7 @@ function createBillboard(position, rotation = 0, color = 0x00ffff, adText = '') 
     return billboard;
 }
 
-function createGantryBillboard(z, color = 0xff6600, adText = '') {
+function createGantryBillboard(z, color = 0xff6600, adText = '', adImage = null) {
     const gantry = new THREE.Group();
 
     // Support posts on each side of the track
@@ -494,7 +500,10 @@ function createGantryBillboard(z, color = 0xff6600, adText = '') {
     const width = trackWidth + 2;
     const height = 2;
     let material;
-    if (adText) {
+    if (adImage) {
+        const texture = new THREE.TextureLoader().load(adImage);
+        material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+    } else if (adText) {
         const canvas = document.createElement('canvas');
         canvas.width = 512;
         canvas.height = 128;
@@ -525,7 +534,7 @@ function createGantryBillboard(z, color = 0xff6600, adText = '') {
 
 // Add billboards along the track with neon colors and F1-themed ads
 // Left side billboards
-createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -20), Math.PI/2, 0xff00ff, 'MIAMI');       // Magenta
+createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -20), Math.PI/2, 0xff00ff, '', 'billboards/ad1.svg');       // Magenta image
 createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -60), Math.PI/2, 0x00ffff, 'GRAND PRIX'); // Cyan
 createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -100), Math.PI/2, 0xffff00, 'SPEED');      // Yellow
 createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -140), Math.PI/2, 0xff00ff, 'RACING');     // Magenta
@@ -534,13 +543,13 @@ createBillboard(new THREE.Vector3(-trackWidth/2 - 2, 3, -180), Math.PI/2, 0x00ff
 // Right side billboards
 createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -40), -Math.PI/2, 0x00ffff, 'F1');         // Cyan
 createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -80), -Math.PI/2, 0xff00ff, 'NEON');       // Magenta
-createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -120), -Math.PI/2, 0x00ff00, 'RACER');      // Green
+createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -120), -Math.PI/2, 0x00ff00, '', 'billboards/ad2.svg');      // Green image
 createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -160), -Math.PI/2, 0xff00ff, 'FASTEST');    // Magenta
 createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -200), -Math.PI/2, 0x00ffff, 'LAP');        // Cyan
 
 // Overhead gantry billboard spanning the track
 // Use a darker color for better contrast on the gantry billboard
-createGantryBillboard(-90, 0x003366, 'Introducing Mint Condition™');
+createGantryBillboard(-90, 0x003366, '', 'billboards/ad3.svg');
 
 
 // Barriers and obstacles
