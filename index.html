@@ -985,11 +985,12 @@ function animate(time) {
         wheel.rotation.x += speed * 0.5 * delta;
     });
     
-    // Move track segments
+    // Move track segments while preserving spacing
     trackSegments.forEach(segment => {
         segment.position.z += speed * delta;
-        if(segment.position.z > 10) {
-            segment.position.z = -((numSegments - 1) * segmentLength);
+        if (segment.position.z > 10) {
+            const minZ = Math.min(...trackSegments.map(s => s.position.z));
+            segment.position.z = minZ - segmentLength;
         }
     });
 
