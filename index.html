@@ -540,9 +540,8 @@ createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -200), -Math.PI/2, 0x00ff
 // Use a darker color for better contrast on the gantry billboard
 createGantryBillboard(-90, 0x003366, 'Introducing Mint Condition™');
 
-// Motion particles - use a single Points object to reduce draw calls
-// Reduced count and size to clean up snow-like effect
-const particleCount = 80;
+// Motion particles - disabled to fully remove snow-like effect
+const particleCount = 0;
 const particleGeometry = new THREE.BufferGeometry();
 const positions = new Float32Array(particleCount * 3);
 const speeds = new Float32Array(particleCount);
@@ -722,6 +721,12 @@ function createBuilding(x, z) {
                       height / 2 + roofHeight + 0.1,
                       (Math.random() - 0.5) * depth * 0.4);
     building.add(hvac);
+
+    // Small blinking red beacon on the roof
+    const beacon = CityLights.createBeacon();
+    beacon.position.set(0, height / 2 + roofHeight + 0.2, 0);
+    building.add(beacon);
+    building.userData.beacon = beacon;
 
     if (Math.random() > 0.7) {
         const towerGeo = new THREE.CylinderGeometry(width * 0.15, width * 0.15, 0.8, 12);
