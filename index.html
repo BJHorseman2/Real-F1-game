@@ -918,7 +918,8 @@ let speed = 0;
 const startSpeed = 0.3;
 let score = 0;
 let lapDistance = 0;
-const trackLength = segmentLength * numSegments;
+// Use the same distance as our looping logic for accurate lap counts
+const trackLength = segmentLength * (numSegments - 1);
 const scoreDiv = document.getElementById('score');
 const countdownDiv = document.getElementById('countdown');
 const messageDiv = document.getElementById('message');
