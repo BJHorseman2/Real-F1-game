@@ -232,11 +232,12 @@
             if(moveLeft) carBody.position.x = Math.max(carBody.position.x - lateralStep, -trackWidth/2+1);
             if(moveRight) carBody.position.x = Math.min(carBody.position.x + lateralStep, trackWidth/2-1);
             
-            // Move track segments
+            // Move track segments while preserving spacing
             trackSegments.forEach(segment => {
                 segment.position.z += speed * delta;
-                if(segment.position.z > 10) {
-                    segment.position.z = -((numSegments - 1) * segmentLength);
+                if (segment.position.z > 10) {
+                    const minZ = Math.min(...trackSegments.map(s => s.position.z));
+                    segment.position.z = minZ - segmentLength;
                 }
             });
             
