@@ -1200,6 +1200,10 @@ function animate(time) {
         lapDistance += speed * delta;
         if (lapDistance >= trackLength) {
             lapDistance -= trackLength;
+            // Reset start line so the new lap begins at the same point
+            if (startLine) {
+                startLine.position.z = 0;
+            }
             if (lap < totalLaps) {
                 lap++;
                 lapDiv.textContent = `Lap: ${lap}/${totalLaps}`;
