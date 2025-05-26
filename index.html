@@ -540,29 +540,6 @@ createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -200), -Math.PI/2, 0x00ff
 // Use a darker color for better contrast on the gantry billboard
 createGantryBillboard(-90, 0x003366, 'Introducing Mint Condition™');
 
-// Motion particles - disabled to fully remove snow-like effect
-const particleCount = 0;
-const particleGeometry = new THREE.BufferGeometry();
-const positions = new Float32Array(particleCount * 3);
-const speeds = new Float32Array(particleCount);
-
-for(let i = 0; i < particleCount; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * trackWidth;
-    positions[i * 3 + 1] = Math.random() * 5;
-    positions[i * 3 + 2] = -(Math.random() * 200);
-    speeds[i] = 0.2 + Math.random() * 0.3;
-}
-
-particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-const particleMaterial = new THREE.PointsMaterial({
-    color: 0xffffff,
-    size: 0.05,
-    transparent: true,
-    opacity: 0.3
-});
-const particles = new THREE.Points(particleGeometry, particleMaterial);
-particles.userData.speeds = speeds;
-scene.add(particles);
 
 // Barriers and obstacles
 const obstacles = [];
@@ -695,9 +672,9 @@ function createBuilding(x, z) {
     const building = new THREE.Mesh(geometry, material);
     building.position.set(x, height / 2, z);
 
-    // Add subtle light to give the building a glow
-    const glowColor = baseColor.clone().offsetHSL(0, 0, 0.2);
-    const buildingLight = CityLights.createLight(glowColor);
+    // Replace large white glow with a small red light
+    const buildingLight = CityLights.createLight(new THREE.Color(0xff0000));
+    buildingLight.scale.set(0.5, 0.5, 1);
     buildingLight.position.set(0, height * 0.8, 0);
     building.add(buildingLight);
     building.userData.light = buildingLight;
@@ -1016,18 +993,6 @@ function animate(time) {
         }
     });
     
-    // Update particles
-    const pPositions = particles.geometry.attributes.position.array;
-    for (let i = 0; i < particleCount; i++) {
-        const idx = i * 3;
-        pPositions[idx + 2] += (particles.userData.speeds[i] + speed) * delta;
-        if (pPositions[idx + 2] > 5) {
-            pPositions[idx + 2] = -200;
-            pPositions[idx] = (Math.random() - 0.5) * trackWidth;
-            particles.userData.speeds[i] = 0.2 + Math.random() * 0.3;
-        }
-    }
-    particles.geometry.attributes.position.needsUpdate = true;
     
     // Move and check power-ups
     powerUps.forEach(powerUp => {
