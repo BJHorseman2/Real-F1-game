@@ -541,7 +541,8 @@ createBillboard(new THREE.Vector3(trackWidth/2 + 2, 3, -200), -Math.PI/2, 0x00ff
 createGantryBillboard(-90, 0x003366, 'Introducing Mint Condition™');
 
 // Motion particles - use a single Points object to reduce draw calls
-const particleCount = 200;
+// Reduced count and size to clean up snow-like effect
+const particleCount = 80;
 const particleGeometry = new THREE.BufferGeometry();
 const positions = new Float32Array(particleCount * 3);
 const speeds = new Float32Array(particleCount);
@@ -556,9 +557,9 @@ for(let i = 0; i < particleCount; i++) {
 particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 const particleMaterial = new THREE.PointsMaterial({
     color: 0xffffff,
-    size: 0.1,
+    size: 0.05,
     transparent: true,
-    opacity: 0.4
+    opacity: 0.3
 });
 const particles = new THREE.Points(particleGeometry, particleMaterial);
 particles.userData.speeds = speeds;
@@ -606,8 +607,9 @@ function createObstacle(z) {
     obstacles.push(barrierGroup);
 }
 
-for(let i = -20; i > -200; i -= 15) {
-    if(Math.random() > 0.3) createObstacle(i);
+// Fewer initial obstacles for smoother gameplay
+for(let i = -30; i > -200; i -= 20) {
+    if(Math.random() < 0.5) createObstacle(i);
 }
 
 // Lighting
