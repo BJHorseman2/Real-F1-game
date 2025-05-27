@@ -820,7 +820,13 @@ function createBlimp() {
     fin.position.set(-4, 0, 0);
     blimp.add(fin);
 
-    blimp.position.set(-20, 25, -100);
+    // Position the blimp closer to the track so it's easier to spot
+    blimp.position.set(0, 25, -80);
+
+    // Add a small point light to ensure the blimp stands out
+    const blimpLight = new THREE.PointLight(0xffffff, 0.8, 30);
+    blimpLight.position.set(0, 0, 0);
+    blimp.add(blimpLight);
     scene.add(blimp);
     return blimp;
 }
