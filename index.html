@@ -338,7 +338,8 @@ function createLine(z, label) {
     }
     const texture = new THREE.CanvasTexture(canvas);
     const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-    const geometry = new THREE.PlaneGeometry(width, 1);
+    // Slightly larger depth so the trigger zone is hard to miss
+    const geometry = new THREE.PlaneGeometry(width, 2);
     const line = new THREE.Mesh(geometry, material);
     line.rotation.x = -Math.PI/2;
     line.position.set(0, 0.02, z);
@@ -926,13 +927,23 @@ for(let i = -40; i > -200; i -= 40) {
 let speed = 0;
 const startSpeed = 0.3;
 let score = 0;
-let lapDistance = 0;
 // Use the same distance as our looping logic for accurate lap counts
 const trackLength = segmentLength * numSegments;
 const scoreDiv = document.getElementById('score');
 const countdownDiv = document.getElementById('countdown');
 const messageDiv = document.getElementById('message');
 const lights = document.querySelectorAll('#startLights .light');
+
+// Checkpoints positioned along the track at equal intervals
+const checkpointTriggerSize = 1.5;
+const checkpointOffsets = [trackLength / 3, (trackLength / 3) * 2];
+const checkpoints = checkpointOffsets.map(off => {
+    const cp = createLine(-off, '');
+    cp.material.opacity = 0; // invisible trigger
+    return cp;
+});
+let nextCheckpoint = 0;
+
 let raceStarted = false;
 let lastTime = 0;
 
@@ -1013,6 +1024,14 @@ function animate(time) {
             if(line.position.z > 10) {
                 line.position.z = -(numSegments * segmentLength);
             }
+        }
+    });
+
+    // Move checkpoints in sync with the track
+    checkpoints.forEach(cp => {
+        cp.position.z += speed * delta;
+        if (cp.position.z > 10) {
+            cp.position.z -= trackLength;
         }
     });
     
@@ -1208,25 +1227,23 @@ function animate(time) {
 
     scoreDiv.textContent = Math.floor(score);
 
-    // Lap progression only after the race starts
+    // Handle checkpoints and lap completion
     if (raceStarted) {
-        lapDistance += speed * delta;
-        if (lapDistance >= trackLength) {
-            lapDistance -= trackLength;
-            // Reset line positions so each new lap starts cleanly
-            if (startLine) {
-                startLine.position.z = 0;
+        if (nextCheckpoint < checkpoints.length) {
+            const cp = checkpoints[nextCheckpoint];
+            if (Math.abs(cp.position.z - carBody.position.z) < checkpointTriggerSize) {
+                nextCheckpoint++;
+                showMessage('Checkpoint ' + nextCheckpoint);
             }
-            if (finishLine) {
-                finishLine.position.z = -(numSegments * segmentLength);
-            }
+        } else if (Math.abs(finishLine.position.z - carBody.position.z) < checkpointTriggerSize) {
+            nextCheckpoint = 0;
             if (lap < totalLaps) {
                 lap++;
                 lapDiv.textContent = `Lap: ${lap}/${totalLaps}`;
                 if (lap === totalLaps) {
                     finishLine.visible = true;
                 } else {
-                    showMessage('Lap ' + (lap - 1) + ' complete!');
+                    if (lap > 1) showMessage('Lap ' + (lap - 1) + ' complete!');
                 }
             } else if (!gameWon) {
                 gameWon = true;
@@ -1237,6 +1254,13 @@ function animate(time) {
                 showMessage('You won the race! Final Score: ' + Math.floor(score));
                 setTimeout(() => window.location.reload(), 1000);
             }
+
+            // Reset line and checkpoint positions for the next lap
+            startLine.position.z = 0;
+            finishLine.position.z = -(numSegments * segmentLength);
+            checkpoints.forEach((cp, i) => {
+                cp.position.z = -checkpointOffsets[i];
+            });
         }
     }
     
