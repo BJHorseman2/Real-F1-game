@@ -402,7 +402,7 @@ for(let i = 0; i < numSegments; i++) {
 
 // Add start and finish lines
 startLine = createLine(0, 'START');
-finishLine = createLine(-segmentLength * (numSegments - 1), 'FINISH');
+finishLine = createLine(-segmentLength * numSegments, 'FINISH');
 finishLine.visible = false;
 
 // Create simple billboards
@@ -928,7 +928,7 @@ const startSpeed = 0.3;
 let score = 0;
 let lapDistance = 0;
 // Use the same distance as our looping logic for accurate lap counts
-const trackLength = segmentLength * (numSegments - 1);
+const trackLength = segmentLength * numSegments;
 const scoreDiv = document.getElementById('score');
 const countdownDiv = document.getElementById('countdown');
 const messageDiv = document.getElementById('message');
@@ -1011,7 +1011,7 @@ function animate(time) {
         if (line) {
             line.position.z += speed * delta;
             if(line.position.z > 10) {
-                line.position.z = -((numSegments - 1) * segmentLength);
+                line.position.z = -(numSegments * segmentLength);
             }
         }
     });
@@ -1218,7 +1218,7 @@ function animate(time) {
                 startLine.position.z = 0;
             }
             if (finishLine) {
-                finishLine.position.z = -((numSegments - 1) * segmentLength);
+                finishLine.position.z = -(numSegments * segmentLength);
             }
             if (lap < totalLaps) {
                 lap++;
