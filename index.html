@@ -788,6 +788,45 @@ function updateBuildingLights(time) {
     CityLights.update(time);
 }
 
+function createBlimp() {
+    const blimp = new THREE.Group();
+
+    const bodyGeo = new THREE.CylinderGeometry(2, 2, 8, 16);
+    bodyGeo.rotateZ(Math.PI / 2);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#4444aa';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 40px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ZOE', canvas.width/2, canvas.height/2);
+    const texture = new THREE.CanvasTexture(canvas);
+
+    const material = new THREE.MeshStandardMaterial({
+        color: 0x4444aa,
+        emissive: 0x222244,
+        map: texture
+    });
+
+    const body = new THREE.Mesh(bodyGeo, material);
+    blimp.add(body);
+
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 1), material.clone());
+    fin.position.set(-4, 0, 0);
+    blimp.add(fin);
+
+    blimp.position.set(-20, 25, -100);
+    scene.add(blimp);
+    return blimp;
+}
+
+const blimp = createBlimp();
+
 // Controls
 let moveLeft = false, moveRight = false;
 let accelerate = false, decelerate = false;
@@ -1133,6 +1172,16 @@ function animate(time) {
             building.position.z -= cityLength;
         }
     });
+
+    // Slowly fly the blimp across the sky
+    if (blimp) {
+        blimp.position.z += speed * 0.3 * delta;
+        blimp.position.x += 0.05 * delta;
+        if (blimp.position.x > 20) blimp.position.x = -20;
+        if (blimp.position.z > 50) {
+            blimp.position.z -= cityLength;
+        }
+    }
     
     // Move obstacles with increasing difficulty
     const difficultyFactor = Math.min(2, 1 + score/20000); // More gradual
