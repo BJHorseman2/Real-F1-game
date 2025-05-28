@@ -470,7 +470,7 @@ function createBillboard(position, rotation = 0, color = 0x00ffff, adText = '', 
     billboard.position.copy(position);
     
     // Adjust rotation to face more toward the player/track center
-    const tilt = Math.PI / 5; // Tilt more toward the player
+    const tilt = Math.PI / 4; // Slightly increased tilt toward the player
     if (rotation > 0) { // Left side
         billboard.rotation.y = Math.PI/2 - tilt;
     } else { // Right side
