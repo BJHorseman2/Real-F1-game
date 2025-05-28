@@ -684,6 +684,8 @@ function createBuilding(x, z) {
 
     const building = new THREE.Mesh(geometry, material);
     building.position.set(x, height / 2, z);
+    // Ensure buildings remain perfectly upright
+    building.rotation.set(0, 0, 0);
 
     // Replace large white glow with a small red light
     const buildingLight = CityLights.createLight(new THREE.Color(0xff0000));
