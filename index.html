@@ -454,6 +454,10 @@ function createBillboard(position, rotation = 0, color = 0x00ffff, adText = '', 
         context.font = 'bold 70px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
+        // Draw outline so the text "pops" against any background
+        context.lineWidth = 8;
+        context.strokeStyle = textColor === '#000000' ? '#ffffff' : '#000000';
+        context.strokeText(adText, canvas.width/2, canvas.height/2);
         context.fillText(adText, canvas.width/2, canvas.height/2);
         
         // Create texture
@@ -482,9 +486,9 @@ function createBillboard(position, rotation = 0, color = 0x00ffff, adText = '', 
     // Adjust rotation to face more toward the player/track center
     const tilt = Math.PI / 3; // Angle more toward the player for visibility
     if (rotation > 0) { // Left side
-        billboard.rotation.y = Math.PI/2 - tilt;
+        billboard.rotation.y = Math.PI/2 + tilt;
     } else { // Right side
-        billboard.rotation.y = -Math.PI/2 + tilt;
+        billboard.rotation.y = -Math.PI/2 - tilt;
     }
     
     // Add to scene and tracking array
@@ -529,6 +533,9 @@ function createGantryBillboard(z, color = 0xff6600, adText = '', adImage = null)
         context.font = 'bold 30px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
+        context.lineWidth = 6;
+        context.strokeStyle = textColor === '#000000' ? '#ffffff' : '#000000';
+        context.strokeText(adText, canvas.width/2, canvas.height/2);
         context.fillText(adText, canvas.width/2, canvas.height/2);
         const texture = new THREE.CanvasTexture(canvas);
         material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
