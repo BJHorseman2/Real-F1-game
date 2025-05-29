@@ -408,6 +408,15 @@ startLine = createLine(0, 'START');
 finishLine = createLine(-segmentLength * numSegments, 'FINISH');
 finishLine.visible = false;
 
+// Utility to pick a readable text color based on billboard background
+function getContrastColor(hexColor) {
+    const r = (hexColor >> 16) & 0xff;
+    const g = (hexColor >> 8) & 0xff;
+    const b = hexColor & 0xff;
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+    return luminance > 186 ? '#000000' : '#ffffff';
+}
+
 // Create simple billboards
 const billboards = [];
 
@@ -439,8 +448,9 @@ function createBillboard(position, rotation = 0, color = 0x00ffff, adText = '', 
         context.lineWidth = 10;
         context.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
         
-        // Add text
-        context.fillStyle = '#ffffff';
+        // Add text with high contrast for readability
+        const textColor = getContrastColor(color);
+        context.fillStyle = textColor;
         context.font = 'bold 70px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -513,7 +523,8 @@ function createGantryBillboard(z, color = 0xff6600, adText = '', adImage = null)
         const context = canvas.getContext('2d');
         context.fillStyle = '#' + color.toString(16).padStart(6, '0');
         context.fillRect(0, 0, canvas.width, canvas.height);
-        context.fillStyle = '#ffffff';
+        const textColor = getContrastColor(color);
+        context.fillStyle = textColor;
         // Smaller crisp lettering for the gantry billboard
         context.font = 'bold 30px Arial';
         context.textAlign = 'center';
