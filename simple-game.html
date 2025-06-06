@@ -82,7 +82,9 @@
         let carBody, trackSegments = [], score = 0;
         let gameStarted = false, gameOver = false;
         let moveLeft = false, moveRight = false;
-        let speed = 0.2;
+        let accelerate = false, decelerate = false;
+        let speed = 0.3;
+        let lastTime = 0;
 
         // Track configuration
         const trackWidth = 16;
@@ -106,6 +108,8 @@
             renderer = new THREE.WebGLRenderer({antialias: true});
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
+            // Ensure focus so keyboard controls work reliably
+            window.focus();
 
             // Create car
             log('Creating car...');
@@ -198,7 +202,8 @@
             );
             
             billboard.position.copy(position);
-            billboard.rotation.y = rotation;
+            const tilt = Math.PI / 3; // angle billboard more toward the player
+            billboard.rotation.y = rotation + (rotation > 0 ? tilt : -tilt);
             
             scene.add(billboard);
             billboards.push(billboard);
@@ -207,63 +212,88 @@
         }
 
         // Animation loop
-        function animate() {
+        function animate(time) {
             requestAnimationFrame(animate);
-            
+
             if (!gameStarted || gameOver) return;
-            
+
+            const delta = lastTime ? (time - lastTime) / 16.6667 : 1;
+            lastTime = time;
+
+            if (accelerate) speed = Math.min(speed + 0.02 * delta, 3);
+            if (decelerate) speed = Math.max(speed - 0.04 * delta, 0);
+
             // Update score
-            score += speed;
+            score += speed * delta;
             document.getElementById('score').textContent = Math.floor(score);
             
             // Move car left/right
-            if(moveLeft) carBody.position.x = Math.max(carBody.position.x-0.2, -trackWidth/2+1);
-            if(moveRight) carBody.position.x = Math.min(carBody.position.x+0.2, trackWidth/2-1);
+            const lateralStep = 0.4 * delta;
+            if(moveLeft) carBody.position.x = Math.max(carBody.position.x - lateralStep, -trackWidth/2+1);
+            if(moveRight) carBody.position.x = Math.min(carBody.position.x + lateralStep, trackWidth/2-1);
             
-            // Move track segments
+            // Move track segments while preserving spacing
             trackSegments.forEach(segment => {
-                segment.position.z += speed;
-                if(segment.position.z > 10) {
-                    segment.position.z = -((numSegments - 1) * segmentLength);
+                segment.position.z += speed * delta;
+                if (segment.position.z > 10) {
+                    const minZ = Math.min(...trackSegments.map(s => s.position.z));
+                    segment.position.z = minZ - segmentLength;
                 }
             });
             
             // Move billboards
             billboards.forEach(billboard => {
-                billboard.position.z += speed;
+                billboard.position.z += speed * delta;
                 if(billboard.position.z > 20) {
                     billboard.position.z -= 200;
                 }
             });
             
             // Slowly increase speed
-            speed += 0.0001;
+            speed += 0.0001 * delta;
             
             // Render scene
             renderer.render(scene, camera);
         }
 
         // Event handlers
-        function onKeyDown(event) {
-            switch(event.key) {
+        function handleKey(event, pressed) {
+            const code = event.code || '';
+            const key = (event.key || '').toLowerCase();
+
+            switch(code) {
                 case 'ArrowLeft':
-                    moveLeft = true;
+                case 'KeyA':
+                    moveLeft = pressed;
                     break;
                 case 'ArrowRight':
-                    moveRight = true;
+                case 'KeyD':
+                    moveRight = pressed;
                     break;
+                case 'ArrowUp':
+                case 'KeyW':
+                    accelerate = pressed;
+                    break;
+                case 'ArrowDown':
+                case 'KeyS':
+                    decelerate = pressed;
+                    break;
+                default:
+                    if (key === 'a') moveLeft = pressed;
+                    else if (key === 'd') moveRight = pressed;
+                    else if (key === 'w') accelerate = pressed;
+                    else if (key === 's') decelerate = pressed;
+                    else return;
             }
+            event.preventDefault();
+        }
+
+        function onKeyDown(event) {
+            handleKey(event, true);
         }
 
         function onKeyUp(event) {
-            switch(event.key) {
-                case 'ArrowLeft':
-                    moveLeft = false;
-                    break;
-                case 'ArrowRight':
-                    moveRight = false;
-                    break;
-            }
+            handleKey(event, false);
         }
 
         function onWindowResize() {
