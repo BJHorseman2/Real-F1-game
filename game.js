@@ -1,4 +1,8 @@
 import { inputManager } from './inputManager.js';
+import { createPlayerCar, createAICar } from './car.js';
+import { createTrackSegment, createLine, segmentLength, numSegments, trackSegments, trackWidth } from './track.js';
+import { createPowerUp, powerUps } from './powerups.js';
+import { aiCars, addAICar, updateAICars } from './ai.js';
 
 // Load and store high score as a numeric value
 let highScore = parseFloat(localStorage.getItem('f1RacerHighScore')) || 0;
@@ -63,310 +67,35 @@ document.body.appendChild(renderer.domElement);
 window.focus();
 
 // F1 car
-const carBody = new THREE.Group();
-
-// Main body - more aerodynamic shape
-const bodyGeometry = new THREE.BoxGeometry(0.8, 0.3, 2);
-const bodyMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffff00,    // Bright yellow base
-    emissive: 0xaaaa00, // Strong yellow emissive glow
-    emissiveIntensity: 1.5, // Increase the glow intensity
-    metalness: 0.4,    // Less metallic for more saturated color
-    roughness: 0.1     // Very smooth surface for better reflections
-});
-const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-carBody.add(body);
-
-// Racing stripes
-const stripesGeometry = new THREE.BoxGeometry(0.2, 0.31, 2);
-const stripesMaterial = new THREE.MeshStandardMaterial({
-    color: 0x000000,     // Black stripes
-    emissive: 0x333333,  // Slight glow
-    metalness: 0.5,
-    roughness: 0.1
-});
-const stripes = new THREE.Mesh(stripesGeometry, stripesMaterial);
-stripes.position.y = 0.01; // Slightly above the body
-carBody.add(stripes);
-
-// Cockpit with neon accents
-const cockpitGeometry = new THREE.BoxGeometry(0.4, 0.2, 0.6);
-const cockpitMaterial = new THREE.MeshStandardMaterial({
-    color: 0x111111,     // Dark base color
-    emissive: 0xaaaa00,  // Yellow neon glow on edges
-    emissiveIntensity: 0.7,
-    metalness: 0.9,
-    roughness: 0.1
-});
-const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
-cockpit.position.z = -0.4;
-cockpit.position.y = 0.25;
-carBody.add(cockpit);
-
-// Wings with neon accents
-const wingGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.3);
-const wingMaterial = new THREE.MeshStandardMaterial({
-    color: 0x222222,       // Dark base color
-    emissive: 0xffff00,    // Bright yellow emissive glow
-    emissiveIntensity: 0.9, // Strong glow intensity
-    metalness: 0.7,
-    roughness: 0.1          // Smooth surface for better reflections
-});
-
-// Front wing - wider and more aggressive
-const frontWing = new THREE.Mesh(wingGeometry, wingMaterial);
-frontWing.position.z = 0.8;
-frontWing.scale.x = 1.2; // Wider front wing
-carBody.add(frontWing);
-
-// Rear wing - taller with dual elements
-const rearWingMain = new THREE.Mesh(wingGeometry, wingMaterial);
-rearWingMain.position.z = -0.8;
-rearWingMain.scale.y = 1.5; // Taller wing
-carBody.add(rearWingMain);
-
-// Second rear wing element (DRS style)
-const rearWingUpper = new THREE.Mesh(
-    new THREE.BoxGeometry(1.0, 0.05, 0.2),
-    wingMaterial
-);
-rearWingUpper.position.z = -0.8;
-rearWingUpper.position.y = 0.15;
-carBody.add(rearWingUpper);
-
-// Air intakes on sides
-const intakeGeometry = new THREE.BoxGeometry(0.15, 0.15, 0.4);
-const intakeMaterial = new THREE.MeshStandardMaterial({
-    color: 0x111111,
-    emissive: 0x555500,
-    emissiveIntensity: 0.7,
-    metalness: 0.8,
-    roughness: 0.2
-});
-
-// Left intake
-const leftIntake = new THREE.Mesh(intakeGeometry, intakeMaterial);
-leftIntake.position.set(0.4, 0.1, -0.2);
-carBody.add(leftIntake);
-
-// Right intake
-const rightIntake = new THREE.Mesh(intakeGeometry, intakeMaterial);
-rightIntake.position.set(-0.4, 0.1, -0.2);
-carBody.add(rightIntake);
-
-// Wheels with neon accents
-const wheelGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16);
-const wheelMaterial = new THREE.MeshStandardMaterial({
-    color: 0x111111,       // Keep tires mostly black
-    emissive: 0x777700,    // Subtle yellow glow on the rims
-    emissiveIntensity: 0.7, // Medium glow intensity
-    metalness: 0.9,
-    roughness: 0.1          // Smooth reflective surface
-});
-
-const wheels = [];
-const wheelPositions = [
-    {x: 0.4, z: 0.5},
-    {x: -0.4, z: 0.5},
-    {x: 0.4, z: -0.5},
-    {x: -0.4, z: -0.5}
-];
-
-wheelPositions.forEach(pos => {
-    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-    wheel.rotation.z = Math.PI / 2;
-    wheel.position.set(pos.x, -0.1, pos.z);
-    wheels.push(wheel);
-    carBody.add(wheel);
-});
-
-// Position the car slightly behind the start line so it doesn't move
-// ahead before the race actually begins
-carBody.position.set(0, 0.3, 2);
-scene.add(carBody);
+const { carBody, wheels } = createPlayerCar(scene);
 
 // -------------------- AI Cars --------------------
-// Simple opponents cloned from the player's car
-const aiCars = [];
 
-function createAICar(z) {
-    const lanes = [-6, -2, 2, 6];
-    const aiCar = carBody.clone(true);
-    const color = new THREE.Color();
-    let hue = Math.random();
-    // Avoid hues close to the player's yellow color (roughly 0.16)
-    if (Math.abs(hue - 0.16) < 0.08) {
-        hue = (hue + 0.5) % 1;
-    }
-    // Use fully saturated colors for a neon look
-    color.setHSL(hue, 1, 0.5);
-    aiCar.traverse(obj => {
-        if (obj.material) obj.material = obj.material.clone();
-        if (obj.material) {
-            if (obj.material.color) {
-                obj.material.color.copy(color);
-            }
-            if (obj.material.emissive) {
-                obj.material.emissive.copy(color);
-            }
-            if (obj.material.emissiveIntensity !== undefined) {
-                obj.material.emissiveIntensity = Math.max(obj.material.emissiveIntensity, 1.2);
-            }
-        }
-    });
-
-    // Add a simple driver helmet for extra detail
-    const helmetGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-    const helmetMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        emissive: color,
-        emissiveIntensity: 0.8,
-        metalness: 0.3,
-        roughness: 0.2
-    });
-    const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
-    helmet.position.set(0, 0.35, -0.4);
-    aiCar.add(helmet);
-
-    // Add number decals on the sides using a small canvas texture
-    const carNumber = Math.floor(Math.random() * 99) + 1;
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 48px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(carNumber.toString(), canvas.width / 2, canvas.height / 2);
-    const numberTexture = new THREE.CanvasTexture(canvas);
-    const numberMaterial = new THREE.MeshBasicMaterial({ map: numberTexture, transparent: true });
-    const numberPlane = new THREE.PlaneGeometry(0.4, 0.4);
-    const leftNumber = new THREE.Mesh(numberPlane, numberMaterial);
-    leftNumber.position.set(0.5, 0.2, 0);
-    leftNumber.rotation.y = -Math.PI / 2;
-    const rightNumber = leftNumber.clone();
-    rightNumber.position.set(-0.5, 0.2, 0);
-    rightNumber.rotation.y = Math.PI / 2;
-    aiCar.add(leftNumber);
-    aiCar.add(rightNumber);
-    const startLane = lanes[Math.floor(Math.random() * lanes.length)];
-    aiCar.position.set(startLane, 0.3, z);
-    aiCar.userData = {
-        speed: 0.05 + Math.random() * 0.1,
-        lane: startLane,
-        targetLane: startLane,
-        laneChangeTimer: Math.floor(Math.random() * 120) + 60,
-        laneChangeSpeed: 0.1
-    };
-    scene.add(aiCar);
-    aiCars.push(aiCar);
+function createAICarInstance(z) {
+    const aiCar = createAICar(scene, carBody, z);
+    addAICar(aiCar);
 }
 
 // Position AI cars behind the start line. They will remain
 // stationary until the race begins.
 for (let i = 6; i <= 10; i += 2) {
-    createAICar(i);
+    createAICarInstance(i);
 }
 
 // Track segments
-const trackSegments = [];
-const segmentLength = 20;
-// Increased number of segments so each lap is longer
-const numSegments = 40;
-const trackWidth = 20;
 
 // Start/finish lines
 let startLine, finishLine;
 
-function createLine(z, label) {
-    const width = trackWidth;
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    const squares = 8;
-    for(let i = 0; i < squares; i++) {
-        ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#000000';
-        ctx.fillRect(i * (canvas.width / squares), 0, canvas.width / squares, canvas.height);
-    }
-    if (label) {
-        ctx.fillStyle = '#ff0000';
-        ctx.font = 'bold 28px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(label, canvas.width / 2, canvas.height / 2);
-    }
-    const texture = new THREE.CanvasTexture(canvas);
-    const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-    // Slightly larger depth so the trigger zone is hard to miss
-    const geometry = new THREE.PlaneGeometry(width, 2);
-    const line = new THREE.Mesh(geometry, material);
-    line.rotation.x = -Math.PI/2;
-    line.position.set(0, 0.02, z);
-    scene.add(line);
-    return line;
-}
-
-function createTrackSegment(position) {
-    const segment = new THREE.Group();
-    
-    // Main track
-    const trackGeometry = new THREE.PlaneGeometry(trackWidth, segmentLength);
-    const trackMaterial = new THREE.MeshStandardMaterial({
-        color: 0x333333,
-        side: THREE.DoubleSide,
-        roughness: 0.7,
-        metalness: 0.1
-    });
-    const track = new THREE.Mesh(trackGeometry, trackMaterial);
-    segment.add(track);
-    
-    // Racing stripes
-    [-8, -4, 0, 4, 8].forEach(x => {
-        const stripeGeo = new THREE.PlaneGeometry(0.5, segmentLength);
-        const stripeMat = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
-            emissive: 0x666666,
-            side: THREE.DoubleSide
-        });
-        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-        stripe.position.set(x, 0, 0.01);
-        segment.add(stripe);
-    });
-    
-    // Curbs
-    [-trackWidth/2, trackWidth/2].forEach(x => {
-        for(let i = 0; i < 10; i++) {
-            const color = i % 2 === 0 ? 0xff0000 : 0xffffff;
-            const curbGeo = new THREE.BoxGeometry(1, segmentLength/10, 0.2);
-            const curbMat = new THREE.MeshStandardMaterial({
-                color: color,
-                emissive: color === 0xff0000 ? 0x330000 : 0x222222
-            });
-            const curb = new THREE.Mesh(curbGeo, curbMat);
-            curb.position.set(x, -segmentLength/2 + (segmentLength/10 * i) + segmentLength/20, 0.1);
-            segment.add(curb);
-        }
-    });
-    
-    segment.rotation.x = -Math.PI/2;
-    segment.position.copy(position);
-    scene.add(segment);
-    return segment;
-}
-
 // Create initial track segments
 for(let i = 0; i < numSegments; i++) {
     const pos = new THREE.Vector3(0, 0, -i * segmentLength);
-    trackSegments.push(createTrackSegment(pos));
+    trackSegments.push(createTrackSegment(scene, pos));
 }
 
 // Add start and finish lines
-startLine = createLine(0, 'START');
-finishLine = createLine(-segmentLength * numSegments, 'FINISH');
+startLine = createLine(scene, 0, 'START');
+finishLine = createLine(scene, -segmentLength * numSegments, 'FINISH');
 finishLine.visible = false;
 
 // Utility to pick a readable text color based on billboard background
@@ -892,32 +621,12 @@ window.addEventListener('orientationchange', () => {
 });
 
 // Power-ups
-const powerUps = [];
 let activePowerUp = null;
 let powerUpDuration = 0;
 
-function createPowerUp(z) {
-    const types = ['speed', 'invincible', 'slowmo'];
-    const type = types[Math.floor(Math.random() * types.length)];
-    
-    const geometry = new THREE.SphereGeometry(0.5, 8, 8);
-    const material = new THREE.MeshStandardMaterial({
-        color: type === 'speed' ? 0x00ff00 : type === 'invincible' ? 0xffff00 : 0x00ffff,
-        emissive: type === 'speed' ? 0x003300 : type === 'invincible' ? 0x333300 : 0x003333,
-        metalness: 0.8,
-        roughness: 0.2
-    });
-    
-    const powerUp = new THREE.Mesh(geometry, material);
-    powerUp.position.set((Math.random() * 12) - 6, 0.5, z);
-    powerUp.userData = { type, collected: false };
-    scene.add(powerUp);
-    powerUps.push(powerUp);
-}
-
 // Create initial power-ups
 for(let i = -40; i > -200; i -= 40) {
-    createPowerUp(i);
+    createPowerUp(scene, i);
 }
 
 // Game loop
@@ -935,7 +644,7 @@ const lights = document.querySelectorAll('#startLights .light');
 const checkpointTriggerSize = 1.5;
 const checkpointOffsets = [trackLength / 3, (trackLength / 3) * 2];
 const checkpoints = checkpointOffsets.map(off => {
-    const cp = createLine(-off, '');
+    const cp = createLine(scene, -off, '');
     cp.material.opacity = 0; // invisible trigger
     return cp;
 });
@@ -1183,65 +892,19 @@ function animate(time) {
     });
 
     // Move AI cars with basic lane changing logic once the race has started
-    aiCars.forEach(ai => {
-        if (!raceStarted) return; // keep them on the grid until the start
-
-        ai.position.z += (speed + ai.userData.speed) * delta;
-
-        // Slight speed variation
-        ai.userData.speed += (Math.random() - 0.5) * 0.001;
-        ai.userData.speed = Math.min(Math.max(ai.userData.speed, 0.03), 0.12);
-
-        // Decide when to change lanes
-        ai.userData.laneChangeTimer -= delta;
-        if (ai.userData.laneChangeTimer <= 0) {
-            const lanes = [-6, -2, 2, 6];
-            ai.userData.targetLane = lanes[Math.floor(Math.random() * lanes.length)];
-            ai.userData.laneChangeTimer = Math.floor(Math.random() * 120) + 60;
-        }
-
-        // Smoothly move toward target lane
-        const dx = ai.userData.targetLane - ai.position.x;
-        const step = Math.sign(dx) * Math.min(Math.abs(dx), ai.userData.laneChangeSpeed * delta);
-        ai.position.x += step;
-
-        if (Math.abs(dx) < 0.05) {
-            ai.position.x = ai.userData.targetLane;
-            ai.userData.lane = ai.userData.targetLane;
-        }
-
-        if (ai.position.x <= -8) ai.position.x = -8;
-        if (ai.position.x >= 8) ai.position.x = 8;
-
-        if(ai.position.z > 5) {
-            const lanes = [-6, -2, 2, 6];
-            const lane = lanes[Math.floor(Math.random() * lanes.length)];
-            ai.position.z = -200;
-            ai.position.x = lane;
-            ai.userData.speed = 0.05 + Math.random()*0.1;
-            ai.userData.lane = lane;
-            ai.userData.targetLane = lane;
-            ai.userData.laneChangeTimer = Math.floor(Math.random() * 120) + 60;
-        }
-
-        // Collision detection (skip if invincible)
-        if(!activePowerUp || activePowerUp !== 'invincible') {
-            if(Math.abs(ai.position.z-carBody.position.z) < 1 &&
-               Math.abs(ai.position.x-carBody.position.x) < 0.75) {
-                const sound = createSound('crash');
-                sound.oscillator.start();
-                sound.oscillator.stop(audioContext.currentTime + 0.3);
-
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem('f1RacerHighScore', highScore);
-                }
-
-                showMessage('Crash! Final Score: ' + Math.floor(score));
-                setTimeout(() => window.location.reload(), 1000);
+    if (raceStarted) {
+        updateAICars(aiCars, delta, speed, carBody, activePowerUp, () => {
+            const sound = createSound('crash');
+            sound.oscillator.start();
+            sound.oscillator.stop(audioContext.currentTime + 0.3);
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('f1RacerHighScore', highScore);
             }
-        }
-    });
+            showMessage('Crash! Final Score: ' + Math.floor(score));
+            setTimeout(() => window.location.reload(), 1000);
+        });
+    }
     
     // Update score and speed only after the race starts
     if (raceStarted) {
