@@ -1,7 +1,7 @@
 import { inputManager } from './inputManager.js';
 
-// Load and store high score
-let highScore = localStorage.getItem('f1RacerHighScore') || 0;
+// Load and store high score as a numeric value
+let highScore = parseFloat(localStorage.getItem('f1RacerHighScore')) || 0;
 document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
 
 // Lap tracking
