@@ -1259,6 +1259,9 @@ function animate(time) {
             speed += baseSpeedIncrease;
         }
 
+        // Prevent runaway acceleration at higher laps
+        speed = Math.min(speed, maxSpeed);
+
         if (score > highScore) {
             highScore = score;
             document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
