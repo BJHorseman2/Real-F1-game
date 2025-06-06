@@ -1,3 +1,5 @@
+import { inputManager } from './inputManager.js';
+
 // Load and store high score
 let highScore = localStorage.getItem('f1RacerHighScore') || 0;
 document.getElementById('highScore').textContent = 'High Score: ' + Math.floor(highScore);
@@ -813,39 +815,9 @@ const blimp = createBlimp();
 
 // Controls
 let moveLeft = false, moveRight = false;
-let accelerate = false, decelerate = false;
 let useTiltControls = false;
 
-// Keyboard controls
-function handleKey(e, pressed) {
-    const code = e.code || '';
-    const key = (e.key || '').toLowerCase();
-
-    switch (code) {
-        case 'ArrowLeft':
-        case 'KeyA':
-            moveLeft = pressed;
-            break;
-        case 'ArrowRight':
-        case 'KeyD':
-            moveRight = pressed;
-            break;
-        case 'ArrowUp':
-            accelerate = pressed;
-            break;
-        case 'ArrowDown':
-            decelerate = pressed;
-            break;
-        default:
-            if (key === 'a') moveLeft = pressed;
-            else if (key === 'd') moveRight = pressed;
-            else return;
-    }
-    e.preventDefault();
-}
-
-window.addEventListener('keydown', e => handleKey(e, true));
-window.addEventListener('keyup', e => handleKey(e, false));
+// Keyboard controls are handled by InputManager
 
 // Touch controls
 const handleTouch = (e) => {
@@ -1044,8 +1016,8 @@ function animate(time) {
     const accelStep = 0.02;
     const brakeStep = 0.04;
     const maxSpeed = 3;
-    const accel = accelerate || inputManager.accelerate;
-    const decel = decelerate || inputManager.decelerate;
+    const accel = inputManager.accelerate;
+    const decel = inputManager.decelerate;
     if (accel) speed = Math.min(speed + accelStep * delta, maxSpeed);
     if (decel) speed = Math.max(speed - brakeStep * delta, 0);
 
@@ -1055,8 +1027,10 @@ function animate(time) {
     
     // Move car
     const lateralStep = 0.4 * delta;
-    if(moveLeft) carBody.position.x = Math.max(carBody.position.x - lateralStep, -8);
-    if(moveRight) carBody.position.x = Math.min(carBody.position.x + lateralStep, 8);
+    const movingLeft = moveLeft || inputManager.left;
+    const movingRight = moveRight || inputManager.right;
+    if(movingLeft) carBody.position.x = Math.max(carBody.position.x - lateralStep, -8);
+    if(movingRight) carBody.position.x = Math.min(carBody.position.x + lateralStep, 8);
     
     // Rotate wheels
     wheels.forEach(wheel => {
